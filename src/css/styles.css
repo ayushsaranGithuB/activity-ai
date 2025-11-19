@@ -101,9 +101,14 @@ textarea {
 
 input:focus,
 textarea:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+    outline: none !important;
+}
+
+.input-section input:focus {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: none !important;
 }
 
 button {
@@ -245,11 +250,6 @@ h2.system-prompt {
 
 .input-section input::placeholder {
     color: #ffffff;
-}
-
-.input-section input:focus {
-    outline: none;
-    border: none;
 }
 
 .input-section button {
