@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
-import { testDatabase } from "../test-db";
 import type { Activity } from "../types";
+import "../css/activity.css";
+import { Filter, Search, Trash } from "lucide-react";
 
 export default function ActivityList() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -11,6 +12,10 @@ export default function ActivityList() {
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  //   States for search and filter
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [filterVisible, setFilterVisible] = useState(false);
 
   // Initialize and load data
   useEffect(() => {
@@ -55,34 +60,6 @@ export default function ActivityList() {
     }
   };
 
-  const runDatabaseTest = async () => {
-    console.clear();
-    await testDatabase();
-    await loadActivities();
-    const categories = await storage.getCategoryNames();
-    setExistingCategories(categories);
-    alert("Database test completed! Check the console for details.");
-  };
-
-  const clearAllData = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to clear ALL data? This cannot be undone!"
-      )
-    )
-      return;
-
-    try {
-      await storage.clearAllData();
-      setActivities([]);
-      setExistingCategories([]);
-      setSuccess("All data cleared!");
-    } catch (err) {
-      console.error("Failed to clear data:", err);
-      setError("Failed to clear data");
-    }
-  };
-
   // Filter activities based on search and category
   const filteredActivities = activities.filter((activity) => {
     const matchesSearch =
@@ -113,98 +90,66 @@ export default function ActivityList() {
   };
 
   return (
-    <div className="activity-list">
+    <div className="activity-section">
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
 
-      <div
-        className="test-buttons"
-        style={{ marginBottom: "20px", display: "flex", gap: "10px" }}
-      >
-        <button onClick={runDatabaseTest} style={{ fontSize: "12px" }}>
-          🧪 Test Database
+      <div className="activity-header">
+        <h2>Activity Log ({activities.length} total)</h2>
+        <button onClick={() => setSearchVisible(!searchVisible)}>
+          <Search size={16} />
         </button>
-        <button
-          onClick={clearAllData}
-          style={{ fontSize: "12px", background: "#dc3545" }}
-        >
-          🗑️ Clear All Data
+        <button onClick={() => setFilterVisible(!filterVisible)}>
+          <Filter size={16} />
         </button>
       </div>
 
-      <h3>Activity Log ({activities.length} total)</h3>
+      <div className="filters">
+        {searchVisible && (
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search activities..."
+            style={{ flex: "1", minWidth: "200px" }}
+          />
+        )}
 
-      <div
-        className="filters"
-        style={{
-          marginBottom: "20px",
-          display: "flex",
-          gap: "10px",
-          flexWrap: "wrap",
-        }}
-      >
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search activities..."
-          style={{ flex: "1", minWidth: "200px" }}
-        />
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          style={{ padding: "8px" }}
-        >
-          <option value="all">All Categories</option>
-          {existingCategories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+        {filterVisible && (
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            style={{ padding: "8px" }}
+          >
+            <option value="all">All Categories</option>
+            {existingCategories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {loading ? (
         <p>Loading activities...</p>
-      ) : filteredActivities.length === 0 ? (
-        <p style={{ color: "#666", fontStyle: "italic" }}>
-          {activities.length === 0
-            ? "No activities yet. Add your first activity above!"
-            : "No activities match your search."}
-        </p>
       ) : (
         <div className="activities-list">
+          {filteredActivities.length === 0 && (
+            <p style={{ color: "#666", fontStyle: "italic" }}>
+              {activities.length === 0
+                ? "No activities yet. Add your first activity above!"
+                : "No activities match your search."}
+            </p>
+          )}
           {filteredActivities.map((activity) => (
-            <div
-              key={activity.id}
-              className="activity-item"
-              style={{
-                padding: "15px",
-                marginBottom: "10px",
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                background: "#f9f9f9",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
+            <div key={activity.id} className="activity-item">
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: "bold", marginBottom: "5px" }}>
                   {activity.text}
                 </div>
                 <div style={{ fontSize: "12px", color: "#666" }}>
-                  <span
-                    style={{
-                      background: "#007bff",
-                      color: "white",
-                      padding: "2px 8px",
-                      borderRadius: "4px",
-                      marginRight: "10px",
-                    }}
-                  >
-                    {activity.category}
-                  </span>
+                  <span className="category">{activity.category}</span>
                   <span>{formatDate(activity.createdAt)}</span>
                   <span style={{ marginLeft: "10px", color: "#999" }}>
                     ID: {activity.id}
@@ -212,18 +157,10 @@ export default function ActivityList() {
                 </div>
               </div>
               <button
+                className="delete-button"
                 onClick={() => deleteActivity(activity.id)}
-                style={{
-                  background: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  padding: "5px 10px",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                }}
               >
-                Delete
+                <Trash size={16} />
               </button>
             </div>
           ))}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
+import { CircleDotDashed } from "lucide-react";
 
 export default function Input() {
   const [text, setText] = useState("");
@@ -20,6 +21,13 @@ export default function Input() {
       }
     };
     init();
+    // set focus to input field on mount
+    const inputElement = document.getElementById(
+      "user-activity-input"
+    ) as HTMLInputElement | null;
+    if (inputElement) {
+      inputElement.focus();
+    }
   }, []);
 
   const save = async () => {
@@ -92,6 +100,9 @@ export default function Input() {
 
   return (
     <div className="input-component">
+      <div className="logo">
+        <CircleDotDashed size={24} color="rgba(85, 198, 169, 1)" />
+      </div>
       <h2 className="system-prompt">What are you up to?</h2>
 
       {error && <div className="error">{error}</div>}
