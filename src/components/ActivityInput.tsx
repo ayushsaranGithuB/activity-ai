@@ -12,7 +12,7 @@ export default function ActivityInput() {
       const res = await fetch("/api/categorize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text }),
       });
 
       const data = await res.json();
@@ -37,4 +37,6 @@ export default function ActivityInput() {
       <button onClick={save} disabled={saving}>
         {saving ? "Saving..." : "Save"}
       </button>
-    <
+    </div>
+  );
+}
