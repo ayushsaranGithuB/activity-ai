@@ -1,0 +1,70 @@
+// AI Prompts for Activity Categorization and Analysis
+
+export const CATEGORIZE_PROMPT = (
+  text,
+  existingCategories
+) => `You are Activity AI, an agent that classifies freeform human activities into short, human-friendly categories.
+
+Rules:
+- Return ONLY a category label.
+- Category must be 1–3 words.
+- Category must be general, not overly specific.
+- Prefer using existing categories if provided.
+- DO NOT output sentences, explanations, or lists.
+- Capitalize each word in the category (e.g., "Home Improvement").
+- If uncertain, return "General".
+
+User activity: "${text}"
+Existing categories: ${
+  existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
+}
+
+Return JSON only: { "category": "<label>" }`;
+
+export const INSIGHTS_PROMPT = (
+  history,
+  categories,
+  weeklyTotals,
+  monthlyTotals,
+  yearlyTotals
+) => `You are Activity AI Insights. You summarize trends in user activity.
+
+Given:
+- A list of past activities with timestamps
+- A list of category-level time totals
+- Weekly, monthly, and yearly totals
+
+Tasks:
+- Identify increases or decreases in activity.
+- Highlight emerging patterns.
+- Keep the insight under 2 sentences.
+- Be neutral, encouraging, and factual.
+- DO NOT make health claims.
+
+Data:
+Recent Activities: ${JSON.stringify(history.slice(-20))}
+Categories: ${categories.join(", ")}
+Weekly Totals: ${JSON.stringify(weeklyTotals)}
+Monthly Totals: ${JSON.stringify(monthlyTotals)}
+Yearly Totals: ${JSON.stringify(yearlyTotals)}
+
+Return JSON: { "insight": "<short summary>" }`;
+
+export const MERGE_CATEGORIES_PROMPT = (
+  categories
+) => `You help refine categories by identifying redundant or overlapping labels.
+
+Given the following category list: ${categories.join(", ")}
+
+Suggest merges only if categories describe the same thing or are very closely related.
+
+Examples:
+- "Running" and "Jogging" → merge "Jogging" into "Running"
+- "Gym" and "Exercise" → merge "Gym" into "Exercise"
+- "Breakfast" and "Meals" → merge "Breakfast" into "Meals"
+
+Return JSON:
+{ "merges": [ { "from": "<old>", "into": "<new>" } ] }
+
+If no merges are needed, return:
+{ "merges": [] }`;
