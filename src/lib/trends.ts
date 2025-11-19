@@ -2,7 +2,6 @@
 
 import type {
     Activity,
-    Category,
     TrendData,
     CategoryTrend,
     TrendPeriod,
@@ -46,7 +45,7 @@ export function getPeriodRange(
     let label: string;
 
     switch (period) {
-        case "week":
+        case "week": {
             start = getStartOfWeek(timestamp);
             end = start + 7 * 24 * 60 * 60 * 1000 - 1;
             label = new Date(start).toLocaleDateString("en-US", {
@@ -54,7 +53,8 @@ export function getPeriodRange(
                 day: "numeric",
             });
             break;
-        case "month":
+        }
+        case "month": {
             start = getStartOfMonth(timestamp);
             const nextMonth = new Date(start);
             nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -64,11 +64,13 @@ export function getPeriodRange(
                 year: "numeric",
             });
             break;
-        case "year":
+        }
+        case "year": {
             start = getStartOfYear(timestamp);
             end = new Date(new Date(start).getFullYear() + 1, 0, 1).getTime() - 1;
             label = new Date(start).getFullYear().toString();
             break;
+        }
     }
 
     return { start, end, label };

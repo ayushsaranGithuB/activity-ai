@@ -39,50 +39,48 @@ export interface Aggregate {
 // API Request/Response Types
 // ============================================================================
 
-export namespace API {
-    // POST /api/categorize
-    export interface CategorizeRequest {
-        text: string;
-        existingCategories?: string[];
-    }
+// POST /api/categorize
+export interface CategorizeRequest {
+    text: string;
+    existingCategories?: string[];
+}
 
-    export interface CategorizeResponse {
-        category: string;
-        error?: string;
-    }
+export interface CategorizeResponse {
+    category: string;
+    error?: string;
+}
 
-    // POST /api/insights
-    export interface InsightsRequest {
-        history: Activity[];
-        categories: string[];
-        weeklyTotals: Record<string, number>;
-        monthlyTotals: Record<string, number>;
-        yearlyTotals: Record<string, number>;
-    }
+// POST /api/insights
+export interface InsightsRequest {
+    history: Activity[];
+    categories: string[];
+    weeklyTotals: Record<string, number>;
+    monthlyTotals: Record<string, number>;
+    yearlyTotals: Record<string, number>;
+}
 
-    export interface InsightsResponse {
-        insight: string;
-    }
+export interface InsightsResponse {
+    insight: string;
+}
 
-    // POST /api/merge-categories
-    export interface MergeCategoriesRequest {
-        categories: string[];
-    }
+// POST /api/merge-categories
+export interface MergeCategoriesRequest {
+    categories: string[];
+}
 
-    export interface CategoryMerge {
-        from: string;
-        into: string;
-    }
+export interface CategoryMerge {
+    from: string;
+    into: string;
+}
 
-    export interface MergeCategoriesResponse {
-        merges: CategoryMerge[];
-    }
+export interface MergeCategoriesResponse {
+    merges: CategoryMerge[];
+}
 
-    // GET /api/health
-    export interface HealthResponse {
-        status: "ok" | "error";
-        timestamp: number;
-    }
+// GET /api/health
+export interface HealthResponse {
+    status: "ok" | "error";
+    timestamp: number;
 }
 
 // ============================================================================

@@ -3,18 +3,16 @@ import { storage } from "../lib/storage";
 import { testDatabase } from "../test-db";
 import type { Activity } from "../types";
 
-export default function ActivityInput() {
-  const [text, setText] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [existingCategories, setExistingCategories] = useState<string[]>([]);
+export default function ActivityList() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(false);
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Initialize storage and load existing data
+  // Initialize and load data
   useEffect(() => {
     const init = async () => {
       try {
@@ -23,7 +21,7 @@ export default function ActivityInput() {
         const categories = await storage.getCategoryNames();
         setExistingCategories(categories);
       } catch (err) {
-        console.error("Failed to initialize storage:", err);
+        console.error("Failed to initialize:", err);
       }
     };
     init();
@@ -40,76 +38,6 @@ export default function ActivityInput() {
       console.error("Failed to load activities:", err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const save = async () => {
-    if (!text.trim()) return;
-
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      // Get category from AI
-      const res = await fetch("/api/categorize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, existingCategories }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
-      }
-
-      const data = await res.json();
-      const category = data.category;
-
-      // Save to IndexedDB
-      const activity = await storage.addActivity({
-        text: text.trim(),
-        category,
-        createdAt: Date.now(),
-      });
-
-      // Update or create category
-      const existingCategory = await storage.getCategory(category);
-      if (existingCategory) {
-        existingCategory.activityCount++;
-        existingCategory.totalMinutes += 30; // Default 30 min
-        existingCategory.lastUsedAt = Date.now();
-        await storage.addOrUpdateCategory(existingCategory);
-      } else {
-        await storage.addOrUpdateCategory({
-          name: category,
-          activityCount: 1,
-          totalMinutes: 30,
-          createdAt: Date.now(),
-          lastUsedAt: Date.now(),
-        });
-        setExistingCategories([...existingCategories, category]);
-      }
-
-      setSuccess(`Activity saved! Category: ${category} (ID: ${activity.id})`);
-      setText("");
-      // Reload activities to show the new one
-      await loadActivities();
-      // Reload categories in case a new one was created
-      const categories = await storage.getCategoryNames();
-      setExistingCategories(categories);
-    } catch (e) {
-      console.error("Error saving activity:", e);
-      setError(
-        "Failed to save activity. Make sure the server is running on port 3000."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !saving && text.trim()) {
-      save();
     }
   };
 
@@ -185,34 +113,13 @@ export default function ActivityInput() {
   };
 
   return (
-    <div className="activity-log">
-      <h2>What are you up to?</h2>
-
+    <div className="activity-list">
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
 
-      <div className="input-section">
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="e.g. Making breakfast"
-          disabled={saving}
-        />
-        <button onClick={save} disabled={saving || !text.trim()}>
-          {saving ? "Saving..." : "Save"}
-        </button>
-      </div>
-
-      {existingCategories.length > 0 && (
-        <p style={{ fontSize: "12px", color: "#666", marginTop: "10px" }}>
-          Existing categories: {existingCategories.join(", ")}
-        </p>
-      )}
-
       <div
         className="test-buttons"
-        style={{ marginTop: "20px", display: "flex", gap: "10px" }}
+        style={{ marginBottom: "20px", display: "flex", gap: "10px" }}
       >
         <button onClick={runDatabaseTest} style={{ fontSize: "12px" }}>
           🧪 Test Database
@@ -224,14 +131,6 @@ export default function ActivityInput() {
           🗑️ Clear All Data
         </button>
       </div>
-
-      <hr
-        style={{
-          margin: "30px 0",
-          border: "none",
-          borderTop: "1px solid #ddd",
-        }}
-      />
 
       <h3>Activity Log ({activities.length} total)</h3>
 

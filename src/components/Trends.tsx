@@ -11,6 +11,7 @@ export default function Trends() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   const loadData = async () => {

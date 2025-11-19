@@ -1,9 +1,13 @@
 /* Activity AI - Main Styles */
 
+
+@import url('https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@100..900&display=swap');
+
+
 :root {
     --color-primary: #007bff;
     --color-primary-hover: #0056b3;
-    --color-bg: #ffffff;
+    --color-bg: #e0e0e0;
     --color-fg: #000000;
     --color-border: #ccc;
     --color-muted: #eee;
@@ -16,19 +20,30 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    font-family: 'Smooch Sans', 'Droid Sans', 'Helvetica Neue',
         sans-serif;
     margin: 0;
     padding: 0;
     background-color: var(--color-bg);
     color: var(--color-fg);
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100svh;
 }
 
 .app {
     max-width: 540px;
     margin: 0 auto;
     padding: 20px;
+    --distance: 4px;
+    margin: 0 auto;
+    border-radius: 50px;
+    background: #e0e0e0;
+    box-shadow: var(--distance) var(--distance) calc(var(--distance) * 3) #bebebe,
+        calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 3) #ffffffe0;
 }
 
 .topbar {
@@ -50,7 +65,7 @@ nav {
 
 nav button {
     padding: 8px 12px;
-    font-size: 14px;
+    font-size: 1em;
     background: var(--color-muted);
     border: none;
     border-radius: 8px;
@@ -64,6 +79,10 @@ nav button:hover {
 
 .content {
     padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    align-items: center;
 }
 
 input,
@@ -194,4 +213,79 @@ button:disabled {
     color: #3a3;
     border-radius: 6px;
     margin-bottom: 10px;
+}
+
+/* Logo */
+
+.logo {
+    --size: 60px;
+    --distance: 6px;
+    margin: 0 auto;
+    border-radius: 50px;
+    background: #e0e0e0;
+    box-shadow: var(--distance) var(--distance) calc(var(--distance) * 3) #bebebe,
+        calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 3) #ffffffe0;
+    width: var(--size);
+    height: var(--size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+h2.system-prompt {
+    font-weight: 500;
+    font-size: 26px;
+    color: #8f8d8d;
+    text-shadow: 0 1px 3px #ffffff;
+    text-align: center;
+}
+
+.activity-log {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+}
+
+
+.input-section {
+    gap: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.input-section input {
+    --distance: 6px;
+    color: #000;
+    border-radius: 50px;
+    border: none;
+    background: #d1d1d1;
+    box-shadow: inset var(--distance) var(--distance) calc(var(--distance) * 4) #b3b2b2, inset calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 4) #ebe9e9;
+    padding: 0.75em 1.25em;
+    min-width: 40ch;
+}
+
+.input-section input::placeholder {
+    color: #ffffff;
+}
+
+.input-section button {
+    --distance: 6px;
+    margin: 0 auto;
+    border-radius: 50px;
+    background: linear-gradient(145deg, #f0f0f0, #cacaca);
+    box-shadow: var(--distance) var(--distance) calc(var(--distance) * 3) #bebebe,
+        calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 3) #ffffffe0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    font-size: 1.25em;
+    color: #8f8d8d;
+    text-shadow: 0 1px 3px #ffffff;
+    padding: 0.5em 2em;
+
 }
