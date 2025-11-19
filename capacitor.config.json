@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.activityai",
+  "appName": "ActivityAI-TS",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
