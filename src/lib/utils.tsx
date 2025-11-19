@@ -1,33 +1,22 @@
 import * as React from "react";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import type { ClassValue } from "clsx";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-export type SlotsToClassNames<T extends (...args: any[]) => any> = Partial<
-  Record<keyof ReturnType<T>, ClassValue>
->;
 
 export function createScopedContext<ContextValueType extends object | null>(
   rootComponentName: string,
-  defaultContext?: ContextValueType,
+  defaultContext?: ContextValueType
 ) {
   const Context = React.createContext<ContextValueType | undefined>(
-    defaultContext,
+    defaultContext
   );
 
   const Provider: React.FC<ContextValueType & { children: React.ReactNode }> = (
-    props,
+    props
   ) => {
     const { children, ...context } = props;
     // Only re-memoize when prop values change
     const value = React.useMemo(
       () => context,
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      Object.values(context),
+      Object.values(context)
     ) as ContextValueType;
     return <Context.Provider value={value}>{children}</Context.Provider>;
   };
@@ -40,7 +29,7 @@ export function createScopedContext<ContextValueType extends object | null>(
     if (defaultContext !== undefined) return defaultContext;
     // if a defaultContext wasn't specified, it's a required context.
     throw new Error(
-      `\`${consumerName}\` must be used within \`${rootComponentName}\``,
+      `\`${consumerName}\` must be used within \`${rootComponentName}\``
     );
   }
 
@@ -48,21 +37,21 @@ export function createScopedContext<ContextValueType extends object | null>(
 }
 
 export function createOptionalScopedContext<
-  ContextValueType extends object | null,
+  ContextValueType extends object | null
 >(rootComponentName: string, defaultContext?: ContextValueType) {
   const Context = React.createContext<ContextValueType | undefined>(
-    defaultContext,
+    defaultContext
   );
 
   const Provider: React.FC<ContextValueType & { children: React.ReactNode }> = (
-    props,
+    props
   ) => {
     const { children, ...context } = props;
     // Only re-memoize when prop values change
     const value = React.useMemo(
       () => context,
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      Object.values(context),
+      Object.values(context)
     ) as ContextValueType;
     return <Context.Provider value={value}>{children}</Context.Provider>;
   };
