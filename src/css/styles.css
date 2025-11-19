@@ -134,36 +134,6 @@ button:disabled {
     opacity: 0.6;
 }
 
-
-/* Trends */
-.trends {
-    margin-top: 30px;
-}
-
-.trends h2 {
-    font-size: 18px;
-    margin-bottom: 15px;
-}
-
-.trend-item {
-    padding: 10px;
-    margin-bottom: 8px;
-    background: #f5f5f5;
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.trend-item .name {
-    font-weight: 500;
-}
-
-.trend-item .count {
-    color: var(--color-primary);
-    font-weight: bold;
-}
-
 /* Loading state */
 .loading {
     text-align: center;

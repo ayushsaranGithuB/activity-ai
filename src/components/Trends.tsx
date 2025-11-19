@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
 import { calculateCategoryTrends, generateTrendSummary } from "../lib/trends";
 import type { Activity, CategoryTrend } from "../types";
+import "../css/trends.css";
 
 export default function Trends() {
   const [loading, setLoading] = useState(true);
@@ -52,45 +53,29 @@ export default function Trends() {
 
   return (
     <div className="trends">
-      <h2>Trends</h2>
-
-      <div style={{ marginBottom: "20px" }}>
+      <div className="activity-header">
+        <h2>Trends</h2>
         <button
           onClick={() => setPeriod("week")}
-          style={{
-            marginRight: "10px",
-            background: period === "week" ? "#007bff" : "#eee",
-            color: period === "week" ? "white" : "black",
-          }}
+          className={period === "week" ? "active" : ""}
         >
           Week
         </button>
         <button
           onClick={() => setPeriod("month")}
-          style={{
-            marginRight: "10px",
-            background: period === "month" ? "#007bff" : "#eee",
-            color: period === "month" ? "white" : "black",
-          }}
+          className={period === "month" ? "active" : ""}
         >
           Month
         </button>
         <button
           onClick={() => setPeriod("year")}
-          style={{
-            background: period === "year" ? "#007bff" : "#eee",
-            color: period === "year" ? "white" : "black",
-          }}
+          className={period === "year" ? "active" : ""}
         >
           Year
         </button>
       </div>
 
-      <div className="success" style={{ marginBottom: "20px" }}>
-        {summary}
-      </div>
-
-      <div>
+      <div className="trend-summary" style={{ marginTop: "20px" }}>
         {trends.map((trend) => (
           <div key={trend.category} className="trend-item">
             <div>
