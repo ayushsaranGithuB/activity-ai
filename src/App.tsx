@@ -10,9 +10,14 @@ export default function App() {
   type ViewType = "home" | "input" | "trends";
 
   const [view, setView] = useState<ViewType>("home");
+  const [inputResetKey, setInputResetKey] = useState(0);
 
   function switchView(newView: ViewType) {
     setView(newView);
+    // if the view is home, reset the conversation in Input component
+    if (newView === "home") {
+      setInputResetKey((prev) => prev + 1);
+    }
   }
 
   return (
@@ -21,7 +26,7 @@ export default function App() {
       <Header changeView={switchView} />
 
       <main className="content">
-        {view === "home" && <Input />}
+        {view === "home" && <Input resetKey={inputResetKey} />}
         {view === "input" && <ActivityList />}
         {view === "trends" && <Trends />}
       </main>

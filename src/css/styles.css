@@ -66,7 +66,7 @@ h2 {
         min-height: 640px;
         border-radius: 2em;
         width: 100svw;
-
+        max-height: 700px;
     }
 
 }
@@ -86,6 +86,8 @@ h2 {
     align-items: center;
     height: 100%;
     flex-grow: 1;
+    max-height: calc(100% - 50px);
+
 }
 
 input,
@@ -284,7 +286,37 @@ h2.system-prompt {
     gap: 1em;
     flex-grow: 1;
     justify-content: center;
+    overflow-y: auto;
+    margin-bottom: 1em;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
 
+/* Scrollbar styling for .messages */
+.messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.messages::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+}
+
+.messages:hover::-webkit-scrollbar-thumb {
+    background: rgba(190, 190, 190, 0.4);
+}
+
+.messages:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(190, 190, 190, 0.6);
+}
+
+/* Firefox scrollbar styling */
+.messages:hover {
+    scrollbar-color: rgba(190, 190, 190, 0.4) transparent;
 }
 
 .chat-wrapper {
@@ -360,4 +392,46 @@ h2.system-prompt {
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+/* Quick Options */
+.quick-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+    justify-content: center;
+}
+
+.quick-option-btn {
+    --distance: 4px;
+    padding: 0.6em 1.2em;
+    background: #e0e0e0;
+    box-shadow: var(--distance) var(--distance) calc(var(--distance) * 2) #bebebe,
+        calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 2) #ffffff;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-family: inherit;
+    font-weight: 500;
+    color: #656464;
+    transition: all 0.2s;
+}
+
+.quick-option-btn:hover:not(:disabled) {
+    box-shadow: var(--distance) var(--distance) calc(var(--distance) * 3) #bebebe,
+        calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 3) #ffffff;
+    transform: translateY(-1px);
+}
+
+.quick-option-btn:active:not(:disabled) {
+    box-shadow: inset var(--distance) var(--distance) calc(var(--distance) * 2) #bebebe,
+        inset calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 2) #ffffff;
+    transform: translateY(0);
+}
+
+.quick-option-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

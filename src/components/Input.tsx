@@ -4,7 +4,11 @@ import { CircleDotDashed, Send } from "lucide-react";
 import type { ConversationMessage } from "../types";
 import toast from "react-hot-toast";
 
-export default function Input() {
+interface InputProps {
+  resetKey?: number;
+}
+
+export default function Input({ resetKey }: InputProps) {
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -13,6 +17,7 @@ export default function Input() {
     ConversationMessage[]
   >([]);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [quickOptions, setQuickOptions] = useState<string[]>([]);
 
   // Initialize storage and load existing categories
   useEffect(() => {
@@ -34,6 +39,16 @@ export default function Input() {
       inputElement.focus();
     }
   }, []);
+
+  // Reset conversation when resetKey changes
+  useEffect(() => {
+    if (resetKey !== undefined) {
+      setConversationHistory([]);
+      setQuickOptions([]);
+      setText("");
+      setError(null);
+    }
+  }, [resetKey]);
 
   const handleConversation = async () => {
     if (!text.trim()) return;
@@ -87,6 +102,13 @@ export default function Input() {
 
       setConversationHistory((prev) => [...prev, assistantMessage]);
 
+      // Set quick options if provided
+      if (data.quickOptions && Array.isArray(data.quickOptions)) {
+        setQuickOptions(data.quickOptions);
+      } else {
+        setQuickOptions([]);
+      }
+
       // If ready to save, save the activity
       if (data.readyToSave && data.activityToSave) {
         setSaving(true);
@@ -125,6 +147,7 @@ export default function Input() {
         setExistingCategories(categories);
 
         setSaving(false);
+        setQuickOptions([]); // Clear options after saving
       }
     } catch (e) {
       console.error("Error in conversation:", e);
@@ -133,6 +156,120 @@ export default function Input() {
       );
     } finally {
       setIsWaitingForResponse(false);
+    }
+  };
+
+  const handleQuickOption = (option: string) => {
+    if (option === "Other...") {
+      // Clear options and let user type
+      setQuickOptions([]);
+      const inputElement = document.getElementById(
+        "user-activity-input"
+      ) as HTMLInputElement | null;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    } else {
+      // Use the selected option as the user's response
+      setQuickOptions([]); // Clear options
+      setText("");
+
+      // Add user message to history
+      const userMessage: ConversationMessage = {
+        role: "user",
+        content: option,
+        timestamp: Date.now(),
+      };
+
+      setConversationHistory((prev) => [...prev, userMessage]);
+      setIsWaitingForResponse(true);
+      setError(null);
+
+      // Send to API
+      (async () => {
+        try {
+          const res = await fetch("/api/conversation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userMessage: option,
+              conversationHistory: conversationHistory.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+              })),
+              existingCategories,
+            }),
+          });
+
+          if (!res.ok) {
+            throw new Error(`Server responded with status ${res.status}`);
+          }
+
+          const data = await res.json();
+
+          // Add assistant message to history
+          const assistantMessage: ConversationMessage = {
+            role: "assistant",
+            content: data.assistantMessage,
+            timestamp: Date.now(),
+          };
+
+          setConversationHistory((prev) => [...prev, assistantMessage]);
+
+          // Set quick options if provided
+          if (data.quickOptions && Array.isArray(data.quickOptions)) {
+            setQuickOptions(data.quickOptions);
+          } else {
+            setQuickOptions([]);
+          }
+
+          // If ready to save, save the activity
+          if (data.readyToSave && data.activityToSave) {
+            setSaving(true);
+
+            const { text: activityText, category } = data.activityToSave;
+
+            // Save to IndexedDB
+            await storage.addActivity({
+              text: activityText,
+              category,
+              createdAt: Date.now(),
+            });
+
+            // Update or create category
+            const existingCategory = await storage.getCategory(category);
+            if (existingCategory) {
+              existingCategory.activityCount++;
+              existingCategory.totalMinutes += 30;
+              existingCategory.lastUsedAt = Date.now();
+              await storage.addOrUpdateCategory(existingCategory);
+            } else {
+              await storage.addOrUpdateCategory({
+                name: category,
+                activityCount: 1,
+                totalMinutes: 30,
+                createdAt: Date.now(),
+                lastUsedAt: Date.now(),
+              });
+            }
+
+            toast.success(`Saved: ${activityText}`);
+
+            const categories = await storage.getCategoryNames();
+            setExistingCategories(categories);
+
+            setSaving(false);
+            setQuickOptions([]);
+          }
+        } catch (e) {
+          console.error("Error in conversation:", e);
+          setError(
+            "Failed to process message. Make sure the server is running on port 3000."
+          );
+        } finally {
+          setIsWaitingForResponse(false);
+        }
+      })();
     }
   };
 
@@ -169,6 +306,20 @@ export default function Input() {
 
         {error && <div className="error">{error}</div>}
       </div>
+      {quickOptions.length > 0 && (
+        <div className="quick-options">
+          {quickOptions.map((option, idx) => (
+            <button
+              key={idx}
+              className="quick-option-btn"
+              onClick={() => handleQuickOption(option)}
+              disabled={isWaitingForResponse || saving}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="input-section">
         <input
           name="user-activity"

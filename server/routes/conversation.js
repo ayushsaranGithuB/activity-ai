@@ -55,6 +55,11 @@ export async function conversation(req, res) {
       readyToSave: parsed.readyToSave || false,
     };
 
+    // If quick options are provided, include them
+    if (parsed.quickOptions && Array.isArray(parsed.quickOptions)) {
+      response.quickOptions = parsed.quickOptions;
+    }
+
     // If ready to save, include the activity details
     if (parsed.readyToSave && parsed.activityText) {
       response.activityToSave = {
