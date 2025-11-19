@@ -172,3 +172,44 @@ export type DateRange = {
 export type SortDirection = "asc" | "desc";
 
 export type SortField = "createdAt" | "category" | "text";
+
+// ============================================================================
+// Conversation Types
+// ============================================================================
+
+export interface ConversationMessage {
+    role: "user" | "assistant";
+    content: string;
+    timestamp: number;
+}
+
+export interface ConversationState {
+    sessionId: string;
+    messages: ConversationMessage[];
+    context: ConversationContext;
+    needsFollowUp: boolean;
+    readyToSave: boolean;
+}
+
+export interface ConversationContext {
+    activity?: string;
+    details?: Record<string, string>;
+    category?: string;
+}
+
+// POST /api/conversation
+export interface ConversationRequest {
+    userMessage: string;
+    conversationHistory?: ConversationMessage[];
+    existingCategories?: string[];
+}
+
+export interface ConversationResponse {
+    assistantMessage: string;
+    needsFollowUp: boolean;
+    readyToSave: boolean;
+    activityToSave?: {
+        text: string;
+        category: string;
+    };
+}

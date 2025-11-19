@@ -1,6 +1,10 @@
 /* Activity List */
 .activity-section {
     margin: 20px 0;
+    height: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 
@@ -37,22 +41,121 @@
 }
 
 .activities-list {
-    margin-top: 0.5em;
+    margin-top: 1.5em;
     background-color: #d7d7d7;
     border-radius: 8px;
-    padding: 4px 12px;
+    padding: 12px 16px;
     border: #d1d1d1 1px solid;
     box-shadow: inset 2px 5px 7px #c9c9c973;
-    font-size: 1.2em;
+    font-size: 1em;
+    max-height: 100%;
+    height: 100%;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.activities-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.activities-list::-webkit-scrollbar-track {
+    background: #c9c9c9;
+    border-radius: 4px;
+}
+
+.activities-list::-webkit-scrollbar-thumb {
+    background: #999;
+    border-radius: 4px;
+}
+
+.activities-list::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+.day-group {
+    margin-bottom: 1.5em;
+}
+
+.day-group:last-child {
+    margin-bottom: 0;
+}
+
+.day-header {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #6b6b6b;
+    margin: 0 0 0.5em 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.day-divider {
+    height: 1px;
+    background: linear-gradient(to right, #bebebe, transparent);
+    margin-bottom: 0.75em;
 }
 
 .activity-item {
-    padding: 15px;
-    margin-bottom: 10px;
-    border-bottom: 1px dashed rgb(145, 145, 145);
+    margin-bottom: 0.75em;
+}
+
+.activity-item:last-child {
+    margin-bottom: 0;
+}
+
+.activity-row {
     display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 0.95em;
+    color: #4a4a4a;
+    line-height: 1.4;
+}
+
+.activity-time {
+    font-weight: 600;
+    color: #7a7a7a;
+}
+
+.activity-separator {
+    color: #b0b0b0;
+}
+
+.activity-text {
+    flex: 1;
+    color: #3a3a3a;
+}
+
+.activity-actions {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: flex-start;
+    margin-top: 0.25em;
+    padding-left: 60px;
+}
+
+.activity-category {
+    color: #6b6b6b;
+    font-style: italic;
+    font-size: 0.85em;
+}
+
+.activity-delete {
+    padding: 0px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    margin-left: 0.5em;
+}
+
+.activity-item:hover .activity-delete {
+    opacity: 1;
+}
+
+.activity-delete:hover {
+    color: #c33;
+    transform: scale(1.1);
 }
 
 

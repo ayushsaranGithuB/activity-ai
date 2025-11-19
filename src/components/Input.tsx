@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
 import { CircleDotDashed, Send } from "lucide-react";
+import type { ConversationMessage } from "../types";
+import toast from "react-hot-toast";
 
 export default function Input() {
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
+  const [conversationHistory, setConversationHistory] = useState<
+    ConversationMessage[]
+  >([]);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
 
   // Initialize storage and load existing categories
   useEffect(() => {
@@ -30,84 +35,139 @@ export default function Input() {
     }
   }, []);
 
-  const save = async () => {
+  const handleConversation = async () => {
     if (!text.trim()) return;
 
-    setSaving(true);
+    // Add user message to history
+    const userMessage: ConversationMessage = {
+      role: "user",
+      content: text.trim(),
+      timestamp: Date.now(),
+    };
+
+    setConversationHistory((prev) => [...prev, userMessage]);
+    setText("");
+    setIsWaitingForResponse(true);
     setError(null);
-    setSuccess(null);
 
     try {
-      // Get category from AI
-      const res = await fetch("/api/categorize", {
+      console.log("📤 Sending request to /api/conversation", {
+        userMessage: userMessage.content,
+        historyLength: conversationHistory.length,
+      });
+
+      // Call conversation API
+      const res = await fetch("/api/conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, existingCategories }),
+        body: JSON.stringify({
+          userMessage: userMessage.content,
+          conversationHistory: conversationHistory.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          existingCategories,
+        }),
       });
+
+      console.log("📥 Response received", { status: res.status });
 
       if (!res.ok) {
         throw new Error(`Server responded with status ${res.status}`);
       }
 
       const data = await res.json();
-      const category = data.category;
 
-      // Save to IndexedDB
-      const activity = await storage.addActivity({
-        text: text.trim(),
-        category,
-        createdAt: Date.now(),
-      });
+      // Add assistant message to history
+      const assistantMessage: ConversationMessage = {
+        role: "assistant",
+        content: data.assistantMessage,
+        timestamp: Date.now(),
+      };
 
-      // Update or create category
-      const existingCategory = await storage.getCategory(category);
-      if (existingCategory) {
-        existingCategory.activityCount++;
-        existingCategory.totalMinutes += 30; // Default 30 min
-        existingCategory.lastUsedAt = Date.now();
-        await storage.addOrUpdateCategory(existingCategory);
-      } else {
-        await storage.addOrUpdateCategory({
-          name: category,
-          activityCount: 1,
-          totalMinutes: 30,
+      setConversationHistory((prev) => [...prev, assistantMessage]);
+
+      // If ready to save, save the activity
+      if (data.readyToSave && data.activityToSave) {
+        setSaving(true);
+
+        const { text: activityText, category } = data.activityToSave;
+
+        // Save to IndexedDB
+        const activity = await storage.addActivity({
+          text: activityText,
+          category,
           createdAt: Date.now(),
-          lastUsedAt: Date.now(),
         });
+
+        // Update or create category
+        const existingCategory = await storage.getCategory(category);
+        if (existingCategory) {
+          existingCategory.activityCount++;
+          existingCategory.totalMinutes += 30; // Default 30 min
+          existingCategory.lastUsedAt = Date.now();
+          await storage.addOrUpdateCategory(existingCategory);
+        } else {
+          await storage.addOrUpdateCategory({
+            name: category,
+            activityCount: 1,
+            totalMinutes: 30,
+            createdAt: Date.now(),
+            lastUsedAt: Date.now(),
+          });
+        }
+
+        // Show success toast
+        toast.success(`Saved: ${activityText}`);
+
+        // Reload categories
+        const categories = await storage.getCategoryNames();
+        setExistingCategories(categories);
+
+        setSaving(false);
       }
-
-      setSuccess(`Activity saved! Category: ${category} (ID: ${activity.id})`);
-      setText("");
-
-      // Reload categories in case a new one was created
-      const categories = await storage.getCategoryNames();
-      setExistingCategories(categories);
     } catch (e) {
-      console.error("Error saving activity:", e);
+      console.error("Error in conversation:", e);
       setError(
-        "Failed to save activity. Make sure the server is running on port 3000."
+        "Failed to process message. Make sure the server is running on port 3000."
       );
     } finally {
-      setSaving(false);
+      setIsWaitingForResponse(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !saving && text.trim()) {
-      save();
+    if (e.key === "Enter" && !isWaitingForResponse && !saving && text.trim()) {
+      handleConversation();
     }
   };
 
   return (
     <div className="chat-wrapper">
       <div className="messages">
-        <div className="logo">
-          <CircleDotDashed size={24} color="rgba(85, 198, 169, 1)" />
-        </div>
-        <h2 className="system-prompt">What are you up to?</h2>
+        {conversationHistory.length === 0 ? (
+          <>
+            <div className="logo">
+              <CircleDotDashed size={24} color="rgba(85, 198, 169, 1)" />
+            </div>
+            <h2 className="system-prompt">What are you up to?</h2>
+          </>
+        ) : (
+          <div className="conversation">
+            {conversationHistory.map((msg, idx) => (
+              <div
+                key={idx}
+                className={
+                  msg.role === "user" ? "user-message" : "assistant-message"
+                }
+              >
+                {msg.content}
+              </div>
+            ))}
+          </div>
+        )}
 
         {error && <div className="error">{error}</div>}
-        {success && <div className="success">{success}</div>}
       </div>
       <div className="input-section">
         <input
@@ -116,11 +176,14 @@ export default function Input() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="e.g. Making breakfast"
-          disabled={saving}
+          placeholder="e.g. I just ate dinner"
+          disabled={isWaitingForResponse || saving}
         />
-        <button onClick={save} disabled={saving || !text.trim()}>
-          {saving ? "..." : <Send size={16} />}
+        <button
+          onClick={handleConversation}
+          disabled={isWaitingForResponse || saving || !text.trim()}
+        >
+          {isWaitingForResponse || saving ? "..." : <Send size={16} />}
         </button>
       </div>
     </div>

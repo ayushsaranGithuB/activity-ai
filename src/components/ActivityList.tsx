@@ -75,19 +75,41 @@ export default function ActivityList() {
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    return date.toLocaleDateString();
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
+
+  const formatDayHeader = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return "Today";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    } else {
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      });
+    }
+  };
+
+  // Group activities by day
+  const groupedActivities = filteredActivities.reduce((groups, activity) => {
+    const dayKey = new Date(activity.createdAt).toDateString();
+    if (!groups[dayKey]) {
+      groups[dayKey] = [];
+    }
+    groups[dayKey].push(activity);
+    return groups;
+  }, {} as Record<string, Activity[]>);
 
   return (
     <div className="activity-section">
@@ -142,28 +164,42 @@ export default function ActivityList() {
                 : "No activities match your search."}
             </p>
           )}
-          {filteredActivities.map((activity) => (
-            <div key={activity.id} className="activity-item">
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: "bold", marginBottom: "5px" }}>
-                  {activity.text}
-                </div>
-                <div style={{ fontSize: "12px", color: "#666" }}>
-                  <span className="category">{activity.category}</span>
-                  <span>{formatDate(activity.createdAt)}</span>
-                  <span style={{ marginLeft: "10px", color: "#999" }}>
-                    ID: {activity.id}
-                  </span>
-                </div>
+          {Object.keys(groupedActivities).map((dayKey) => {
+            const dayActivities = groupedActivities[dayKey];
+            const firstActivity = dayActivities[0];
+
+            return (
+              <div key={dayKey} className="day-group">
+                <h3 className="day-header">
+                  {formatDayHeader(firstActivity.createdAt)}
+                </h3>
+                <div className="day-divider"></div>
+                {dayActivities.map((activity) => (
+                  <div key={activity.id} className="activity-item">
+                    <div className="activity-row">
+                      <span className="activity-time">
+                        {formatDate(activity.createdAt)}
+                      </span>
+                      <span className="activity-separator">-</span>
+                      <span className="activity-text">{activity.text}</span>
+                    </div>
+                    <div className="activity-actions">
+                      <span className="activity-category">
+                        {activity.category}
+                      </span>
+                      <button
+                        className="activity-delete"
+                        onClick={() => deleteActivity(activity.id)}
+                        title="Delete activity"
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <button
-                className="delete-button"
-                onClick={() => deleteActivity(activity.id)}
-              >
-                <Trash size={16} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

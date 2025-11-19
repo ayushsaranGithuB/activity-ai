@@ -19,7 +19,7 @@ export async function generateContent(prompt, config = {}) {
   }
 
   const defaultConfig = {
-    model: "gemini-2.0-flash-lite",
+    model: "gemini-2.5-flash-lite",
     contents: prompt,
     config: {
       temperature: 0.3,
@@ -29,7 +29,24 @@ export async function generateContent(prompt, config = {}) {
     },
   };
 
+  console.log("🤖 Gemini API Request:", {
+    model: defaultConfig.model,
+    temperature: defaultConfig.config.temperature,
+    maxOutputTokens: defaultConfig.config.maxOutputTokens,
+    promptLength:
+      typeof prompt === "string"
+        ? prompt.length
+        : JSON.stringify(prompt).length,
+  });
+
   const result = await genAI.models.generateContent(defaultConfig);
+
+  console.log("✅ Gemini API Response:", {
+    responseLength: result.text.length,
+    response:
+      result.text.substring(0, 200) + (result.text.length > 200 ? "..." : ""),
+  });
+
   return result.text;
 }
 

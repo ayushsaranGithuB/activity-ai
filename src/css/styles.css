@@ -65,6 +65,7 @@ h2 {
         max-width: 390px;
         min-height: 640px;
         border-radius: 2em;
+        width: 100svw;
 
     }
 
@@ -265,6 +266,7 @@ h2.system-prompt {
     color: #ddfff7;
     text-shadow: 0 1px 3px #878787b0;
     padding: 0.5em;
+    aspect-ratio: 1 / 1;
     border: 1px var(--color-highlight) solid;
     letter-spacing: 0.9px;
 }
@@ -287,7 +289,75 @@ h2.system-prompt {
 
 .chat-wrapper {
     height: 100%;
+    width: 100%;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+}
+
+.conversation {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+    margin-top: 1em;
+    width: 100%;
+}
+
+.user-message,
+.assistant-message {
+    padding: 0.75em 1em;
+    border-radius: 12px;
+    max-width: 85%;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.user-message {
+    align-self: flex-end;
+    background: linear-gradient(145deg, rgb(203 205 205), rgb(205 202 202));
+    color: #1a5a4a;
+    /* box-shadow: 2px 2px 6px #bebebe; */
+    margin-left: auto;
+    border-radius: 28px;
+    border-bottom-right-radius: 0;
+}
+
+.assistant-message {
+    align-self: flex-start;
+    background: none;
+    color: #656464;
+    margin-right: auto;
+    font-size: 1.3em;
+    line-height: 120%;
+    letter-spacing: 0.6px;
+    font-weight: 500;
+}
+
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(145deg, rgb(159 233 214), rgb(76 181 154));
+    color: #1a5a4a;
+    padding: 0.75em 1.25em;
+    border-radius: 12px;
+    box-shadow: 4px 4px 12px #bebebe;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out;
+    z-index: 1000;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }

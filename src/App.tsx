@@ -4,6 +4,7 @@ import Input from "./components/Input";
 import ActivityList from "./components/ActivityList";
 import Header from "./components/Header";
 import DevOptions from "./components/DevOptions";
+import { Toaster } from "react-hot-toast";
 
 export default function App() {
   type ViewType = "home" | "input" | "trends";
@@ -16,6 +17,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <Toaster position="bottom-right" />
       <Header changeView={switchView} />
 
       <main className="content">
