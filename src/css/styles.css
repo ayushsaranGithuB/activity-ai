@@ -57,7 +57,7 @@ h2 {
         calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 3) #ffffffe0;
     display: flex;
     flex-direction: column;
-
+    overflow: hidden;
 }
 
 @media screen and (min-width: 600px) {
@@ -84,10 +84,9 @@ h2 {
     flex-direction: column;
     gap: 1em;
     align-items: center;
-    height: 100%;
-    flex-grow: 1;
-    max-height: calc(100% - 50px);
-
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 input,

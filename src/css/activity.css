@@ -1,11 +1,13 @@
 /* Activity List */
 .activity-section {
-    margin: 20px 0;
-    height: 100%;
+    margin: 20px 0 0;
     width: 100%;
-    flex-grow: 1;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    font-size: 1.2em;
 }
 
 
@@ -13,6 +15,7 @@
     display: flex;
     align-items: center;
     gap: 1em;
+    padding: 4px 4px 0 0;
 }
 
 .activity-header h2 {
@@ -132,11 +135,11 @@
     align-items: center;
     justify-content: space-between;
     margin-top: 0.25em;
-    padding-left: 60px;
+    padding-left: 75px;
 }
 
 .activity-category {
-    color: #6b6b6b;
+    color: #909090;
     font-style: italic;
     font-size: 0.85em;
 }
