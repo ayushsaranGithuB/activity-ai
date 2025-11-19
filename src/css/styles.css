@@ -49,13 +49,25 @@ h2 {
 .app {
     max-width: 540px;
     margin: 0 auto;
-    padding: 2em;
+    padding: 1.25em;
     --distance: 4px;
     margin: 0 auto;
-    border-radius: 50px;
     background: #e0e0e0;
     box-shadow: var(--distance) var(--distance) calc(var(--distance) * 3) #bebebe,
         calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 3) #ffffffe0;
+    display: flex;
+    flex-direction: column;
+
+}
+
+@media screen and (min-width: 600px) {
+    .app {
+        max-width: 390px;
+        min-height: 640px;
+        border-radius: 2em;
+
+    }
+
 }
 
 .topbar {
@@ -71,6 +83,8 @@ h2 {
     flex-direction: column;
     gap: 1em;
     align-items: center;
+    height: 100%;
+    flex-grow: 1;
 }
 
 input,
@@ -207,30 +221,39 @@ h2.system-prompt {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
+    width: 100%;
+    border-radius: 50px;
+    border: none;
+    background: #d1d1d1;
+    box-shadow: inset var(--distance) var(--distance) calc(var(--distance) * 4) #b3b2b2, inset calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 4) #ebe9e9;
 }
 
 .input-section input {
     --distance: 6px;
     color: #656464;
-    border-radius: 50px;
+    background: none;
     border: none;
-    background: #d1d1d1;
-    box-shadow: inset var(--distance) var(--distance) calc(var(--distance) * 4) #b3b2b2, inset calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 4) #ebe9e9;
+    outline: none;
     padding: 0.75em 1.25em;
-    min-width: 40ch;
     font-size: 1.2em;
     letter-spacing: 0.6px;
     font-weight: 600;
+    margin: 0;
 }
+
 
 .input-section input::placeholder {
     color: #ffffff;
 }
 
+.input-section input:focus {
+    outline: none;
+    border: none;
+}
+
 .input-section button {
     --distance: 6px;
-    margin: 0 auto;
+    margin: 0 6px 0 auto;
     border-radius: 50px;
     background: linear-gradient(145deg, rgb(159 233 214), rgb(76 181 154));
     box-shadow: var(--distance) var(--distance) calc(var(--distance) * 3) #bebebe, calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 3) #ffffffe0;
@@ -241,7 +264,7 @@ h2.system-prompt {
     font-size: 1.25em;
     color: #ddfff7;
     text-shadow: 0 1px 3px #878787b0;
-    padding: 0.5em 2em;
+    padding: 0.5em;
     border: 1px var(--color-highlight) solid;
     letter-spacing: 0.9px;
 }
@@ -250,4 +273,21 @@ h2.system-prompt {
     position: absolute;
     bottom: 50px;
     right: 50px;
+}
+
+.messages {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    flex-grow: 1;
+    justify-content: center;
+
+}
+
+.chat-wrapper {
+    height: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }

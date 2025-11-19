@@ -9,7 +9,7 @@ import { testDatabase } from "./test-db";
 export default function App() {
   type ViewType = "home" | "input" | "trends";
 
-  const [view, setView] = useState<ViewType>("input");
+  const [view, setView] = useState<ViewType>("home");
 
   function switchView(newView: ViewType) {
     setView(newView);

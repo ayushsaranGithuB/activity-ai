@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
-import { CircleDotDashed } from "lucide-react";
+import { CircleDotDashed, Send } from "lucide-react";
 
 export default function Input() {
   const [text, setText] = useState("");
@@ -99,15 +99,16 @@ export default function Input() {
   };
 
   return (
-    <div className="input-component">
-      <div className="logo">
-        <CircleDotDashed size={24} color="rgba(85, 198, 169, 1)" />
+    <div className="chat-wrapper">
+      <div className="messages">
+        <div className="logo">
+          <CircleDotDashed size={24} color="rgba(85, 198, 169, 1)" />
+        </div>
+        <h2 className="system-prompt">What are you up to?</h2>
+
+        {error && <div className="error">{error}</div>}
+        {success && <div className="success">{success}</div>}
       </div>
-      <h2 className="system-prompt">What are you up to?</h2>
-
-      {error && <div className="error">{error}</div>}
-      {success && <div className="success">{success}</div>}
-
       <div className="input-section">
         <input
           name="user-activity"
@@ -119,7 +120,7 @@ export default function Input() {
           disabled={saving}
         />
         <button onClick={save} disabled={saving || !text.trim()}>
-          {saving ? "Saving..." : "Save"}
+          {saving ? "..." : <Send size={16} />}
         </button>
       </div>
     </div>
