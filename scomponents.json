@@ -1,0 +1,6 @@
+{
+  "style": "mehdibha/t3chat",
+  "registries": {
+    "@dotui": "https://dotui.org/r/{style}/{name}"
+  }
+}
