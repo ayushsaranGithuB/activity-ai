@@ -5,7 +5,7 @@ import type { BroadCategory, BroadCategoryMapping } from "../types";
 // Predefined broad category mappings with keywords for AI classification
 export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
     {
-        broad: "Work & Professional",
+        broad: "Work",
         subcategories: [
             "App Development",
             "Programming",
@@ -35,7 +35,7 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Food & Nutrition",
+        broad: "Food",
         subcategories: [
             "Eating",
             "Drinking Beverage",
@@ -168,7 +168,7 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Wellness & Self-Care",
+        broad: "Health",
         subcategories: [
             "Relaxing Outdoors",
             "Sunbathing",

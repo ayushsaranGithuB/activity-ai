@@ -6,12 +6,12 @@
 
 // Predefined broader category types
 export type BroadCategory =
-    | "Work & Professional"
-    | "Food & Nutrition"
+    | "Work"
+    | "Food"
     | "Physical Activity"
     | "Entertainment"
     | "Home & Household"
-    | "Wellness & Self-Care"
+    | "Health"
     | "Social"
     | "Learning & Education"
     | "Other";

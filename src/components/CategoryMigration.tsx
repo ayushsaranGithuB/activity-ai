@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
 import { getBroadCategoryForSubcategory } from "../lib/broad-categories";
-import type { Category } from "../types";
+import type { Category, BroadCategory } from "../types";
+
+// Map old broad category names to new ones
+function updateBroadCategoryName(oldName: string): BroadCategory {
+  const mapping: Record<string, BroadCategory> = {
+    "Work & Professional": "Work",
+    "Food & Nutrition": "Food",
+    "Wellness & Self-Care": "Health",
+  };
+  return (mapping[oldName] as BroadCategory) || (oldName as BroadCategory);
+}
 
 export default function CategoryMigration() {
   const [status, setStatus] = useState<string>("");
@@ -71,20 +81,26 @@ export default function CategoryMigration() {
           }
         );
 
-        // Skip if already migrated
-        if (category.broadCategory && !category.isBroadCategory) {
-          console.log(
-            `⏭️ CategoryMigration: Skipping "${category.name}" - already migrated to "${category.broadCategory}"`
-          );
-          alreadyMigrated++;
-          continue;
-        }
-
-        // Determine broad category
+        // Determine broad category (re-assign to handle renamed categories)
         console.log(
           `🎯 CategoryMigration: Determining broad category for "${category.name}"`
         );
-        const broadCategory = getBroadCategoryForSubcategory(category.name);
+        let broadCategory = getBroadCategoryForSubcategory(category.name);
+
+        // If category already has a broad category, update it to new name if needed
+        if (category.broadCategory) {
+          const updatedName = updateBroadCategoryName(category.broadCategory);
+          if (updatedName !== category.broadCategory) {
+            console.log(
+              `🔄 CategoryMigration: Updating broad category name "${category.broadCategory}" → "${updatedName}"`
+            );
+            broadCategory = updatedName;
+          } else {
+            // Keep existing assignment if it's already correct
+            broadCategory = category.broadCategory;
+          }
+        }
+
         console.log(
           `✅ CategoryMigration: Assigned broad category "${broadCategory}" to "${category.name}"`
         );
@@ -114,15 +130,14 @@ export default function CategoryMigration() {
       }
 
       console.log(
-        `🎉 CategoryMigration: Migration complete! Updated: ${updatedCount}, Already migrated: ${alreadyMigrated}`
+        `🎉 CategoryMigration: Migration complete! Updated: ${updatedCount}`
       );
 
       setStatus(
         (prev) =>
           prev +
           `\n✅ Migration complete!\n` +
-          `   Updated: ${updatedCount}\n` +
-          `   Already migrated: ${alreadyMigrated}\n`
+          `   Updated: ${updatedCount} categories\n`
       );
 
       setTimeout(() => {

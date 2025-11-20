@@ -9,6 +9,82 @@ import {
 import type { Activity, CategoryTrend, Category } from "../types";
 import "../css/trends.css";
 
+// Helper function to get period range with offset
+function getOffsetPeriodRange(
+  period: "week" | "month" | "year",
+  offset: number
+): { start: number; end: number } {
+  const now = new Date();
+  let start: Date;
+  let end: Date;
+
+  if (period === "week") {
+    // Week starts on Sunday
+    const dayOfWeek = now.getDay();
+    start = new Date(now);
+    start.setDate(now.getDate() - dayOfWeek + offset * 7);
+    start.setHours(0, 0, 0, 0);
+
+    end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+  } else if (period === "month") {
+    start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    start.setHours(0, 0, 0, 0);
+
+    end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+    end.setHours(23, 59, 59, 999);
+  } else {
+    // year
+    start = new Date(now.getFullYear() + offset, 0, 1);
+    start.setHours(0, 0, 0, 0);
+
+    end = new Date(now.getFullYear() + offset, 11, 31);
+    end.setHours(23, 59, 59, 999);
+  }
+
+  return {
+    start: start.getTime(),
+    end: end.getTime(),
+  };
+}
+
+// Helper function to format date range label
+function formatPeriodLabel(
+  period: "week" | "month" | "year",
+  offset: number
+): string {
+  const range = getOffsetPeriodRange(period, offset);
+  const start = new Date(range.start);
+  const end = new Date(range.end);
+
+  if (offset === 0) {
+    if (period === "week") return "This Week";
+    if (period === "month") return "This Month";
+    if (period === "year") return "This Year";
+  }
+
+  if (period === "week") {
+    const monthStart = start.toLocaleDateString("en-US", { month: "short" });
+    const monthEnd = end.toLocaleDateString("en-US", { month: "short" });
+    const dateStart = start.getDate();
+    const dateEnd = end.getDate();
+
+    if (monthStart === monthEnd) {
+      return `${monthStart} ${dateStart}-${dateEnd}`;
+    } else {
+      return `${monthStart} ${dateStart} - ${monthEnd} ${dateEnd}`;
+    }
+  } else if (period === "month") {
+    return start.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+  } else {
+    return start.getFullYear().toString();
+  }
+}
+
 const PieChart = ({
   trends,
   onCategoryClick,
@@ -18,8 +94,8 @@ const PieChart = ({
 }) => {
   const colors = [
     "#4db59a",
-    "#5fc9ae",
-    "#7dd3c0",
+    "#12aedeff",
+    "#b97dd3ff",
     "#9bddd2",
     "#b9e7e4",
     "#ffa726",
@@ -58,15 +134,8 @@ const PieChart = ({
   });
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "20px",
-        marginTop: "20px",
-      }}
-    >
-      <svg width="120" height="120" viewBox="0 0 100 100">
+    <div className="trends-pie-chart">
+      <svg width="300" height="300" viewBox="0 0 100 100">
         {paths.map((item, index) => (
           <path
             key={index}
@@ -77,42 +146,14 @@ const PieChart = ({
           />
         ))}
       </svg>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "4px",
-          fontSize: "12px",
-        }}
-      >
+      <div className="legend-color-box">
         {paths.map((item, index) => (
           <div
+            className={`legend-item ${!onCategoryClick ? "non-clickable" : ""}`}
             key={index}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              cursor: onCategoryClick ? "pointer" : "default",
-              padding: "2px 4px",
-              borderRadius: "4px",
-              transition: "background 0.2s",
-            }}
             onClick={() => onCategoryClick?.(item.category)}
-            onMouseEnter={(e) => {
-              if (onCategoryClick) e.currentTarget.style.background = "#f0f0f0";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-            }}
           >
-            <div
-              style={{
-                width: "12px",
-                height: "12px",
-                background: item.color,
-                borderRadius: "2px",
-              }}
-            />
+            <div className="legend-color" style={{ background: item.color }} />
             <span>
               {item.category} ({item.percentage}%)
             </span>
@@ -137,11 +178,12 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [period, setPeriod] = useState<"week" | "month" | "year">("week");
   const [expandedBroad, setExpandedBroad] = useState<Set<string>>(new Set());
+  const [periodOffset, setPeriodOffset] = useState(0); // 0 = current, -1 = previous, 1 = next
 
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+  }, [period, periodOffset]);
 
   // Expand all broad categories by default when trends load
   useEffect(() => {
@@ -163,7 +205,15 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
       setActivities(allActivities);
       setCategories(allCategories);
 
-      const periodTrends = calculateCategoryTrends(allActivities, period);
+      // Get the date range for the current period + offset
+      const range = getOffsetPeriodRange(period, periodOffset);
+
+      // Filter activities to the date range
+      const filteredActivities = allActivities.filter(
+        (a) => a.createdAt >= range.start && a.createdAt <= range.end
+      );
+
+      const periodTrends = calculateCategoryTrends(filteredActivities, period);
 
       // Enrich trends with broad category information
       const enrichedTrends = periodTrends.map((trend) => {
@@ -204,7 +254,7 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
 
   const handleCategoryClick = (category: string) => {
     if (onCategoryClick) {
-      const dateRange = getPeriodRange(period);
+      const dateRange = getOffsetPeriodRange(period, periodOffset);
       onCategoryClick(category, dateRange);
     }
   };
@@ -251,44 +301,69 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
       <div className="activity-header">
         <h2>Trends</h2>
         <button
-          onClick={() => setPeriod("week")}
+          onClick={() => {
+            setPeriod("week");
+            setPeriodOffset(0);
+          }}
           className={period === "week" ? "active" : ""}
         >
           Week
         </button>
         <button
-          onClick={() => setPeriod("month")}
+          onClick={() => {
+            setPeriod("month");
+            setPeriodOffset(0);
+          }}
           className={period === "month" ? "active" : ""}
         >
           Month
         </button>
         <button
-          onClick={() => setPeriod("year")}
+          onClick={() => {
+            setPeriod("year");
+            setPeriodOffset(0);
+          }}
           className={period === "year" ? "active" : ""}
         >
           Year
         </button>
       </div>
 
-      <div className="trend-summary" style={{ marginTop: "20px" }}>
+      <div className="trends-timeline-nav">
+        <button onClick={() => setPeriodOffset(periodOffset - 1)}>←</button>
+        <span>{formatPeriodLabel(period, periodOffset)}</span>
+        <button
+          onClick={() => setPeriodOffset(periodOffset + 1)}
+          disabled={periodOffset >= 0}
+        >
+          →
+        </button>
+      </div>
+
+      {period === "week" && sortedBroadCategories.length > 0 && (
+        <PieChart
+          trends={sortedBroadCategories.map(([broadCategory, group]) => ({
+            category: broadCategory,
+            broadCategory: broadCategory as BroadCategory,
+            totalMinutes: group.totalMinutes,
+            activityCount: group.totalActivities,
+          }))}
+          onCategoryClick={(broad) => toggleBroadCategory(broad)}
+        />
+      )}
+      <div className="trend-summary">
         {sortedBroadCategories.map(([broadCategory, group]) => (
-          <div key={broadCategory} style={{ marginBottom: "16px" }}>
+          <div key={broadCategory} className="trend-group">
             {/* Broad Category Header */}
             <div
-              className="trend-item"
+              className="trend-item broad-category"
               onClick={() => toggleBroadCategory(broadCategory)}
-              style={{
-                cursor: "pointer",
-                backgroundColor: "#f8f9fa",
-                fontWeight: "600",
-                borderLeft: "4px solid #4db59a",
-              }}
             >
               <div>
                 <div className="name">
                   {expandedBroad.has(broadCategory) ? "▼" : "▶"} {broadCategory}
                 </div>
-                <div style={{ fontSize: "12px", color: "#666" }}>
+                <div className="trend-meta">
                   {group.totalActivities} activities • {group.totalMinutes} min
                   {" • "}
                   {group.subcategories.length}{" "}
@@ -302,33 +377,18 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
 
             {/* Subcategories (collapsible) */}
             {expandedBroad.has(broadCategory) && (
-              <div style={{ marginLeft: "20px", marginTop: "8px" }}>
+              <div className="subcategories-container">
                 {group.subcategories.map((trend) => (
                   <div
                     key={trend.category}
-                    className="trend-item"
+                    className={`trend-item subcategory ${
+                      !onCategoryClick ? "non-clickable" : ""
+                    }`}
                     onClick={() => handleCategoryClick(trend.category)}
-                    style={{
-                      cursor: onCategoryClick ? "pointer" : "default",
-                      transition: "all 0.2s",
-                      backgroundColor: "white",
-                      borderLeft: "2px solid #e0e0e0",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (onCategoryClick) {
-                        e.currentTarget.style.transform = "translateX(4px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 2px 8px rgba(0,0,0,0.1)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateX(0)";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
                   >
                     <div>
                       <div className="name">{trend.category}</div>
-                      <div style={{ fontSize: "12px", color: "#666" }}>
+                      <div className="trend-meta">
                         {trend.activityCount} activities • {trend.totalMinutes}{" "}
                         min
                         {trend.percentageOfTotal &&
@@ -344,18 +404,7 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
         ))}
       </div>
 
-      {period === "week" && trends.length > 0 && (
-        <PieChart trends={trends} onCategoryClick={handleCategoryClick} />
-      )}
-
-      <div
-        style={{
-          marginTop: "20px",
-          padding: "10px",
-          background: "#f5f5f5",
-          borderRadius: "6px",
-        }}
-      >
+      <div className="trends-total">
         <strong>Total activities:</strong> {activities.length}
       </div>
     </div>

@@ -192,9 +192,19 @@ class ActivityStorage {
         return db.getAllFromIndex(STORES.CATEGORIES, "broadCategory", broadCategory);
     }
 
-    async getBroadCategories(): Promise<Category[]> {
+    async getBroadCategories(): Promise<BroadCategory[]> {
+        // Get all unique broad categories from existing subcategories
         const db = this.ensureDB();
-        return db.getAllFromIndex(STORES.CATEGORIES, "isBroadCategory", true);
+        const allCategories = await db.getAll(STORES.CATEGORIES);
+        const broadCategories = new Set<BroadCategory>();
+
+        allCategories.forEach(cat => {
+            if (cat.broadCategory) {
+                broadCategories.add(cat.broadCategory);
+            }
+        });
+
+        return Array.from(broadCategories);
     }
 
     async getSubcategories(broadCategory: BroadCategory): Promise<Category[]> {

@@ -8,16 +8,16 @@ export const CATEGORIZE_PROMPT = (
 
 Category Structure:
 - Each activity gets TWO classifications:
-  1. A BROAD CATEGORY (top-level): Work & Professional, Food & Nutrition, Physical Activity, Entertainment, Home & Household, Wellness & Self-Care, Social, Learning & Education, or Other
+  1. A BROAD CATEGORY (top-level): Work, Food, Physical Activity, Entertainment, Home & Household, Health, Social, Learning & Education, or Other
   2. A SPECIFIC SUBCATEGORY (detailed): A 1-3 word specific label
 
 Broad Categories and Examples:
-- Work & Professional: App Development, Programming, Meetings, Project Work
-- Food & Nutrition: Eating, Drinking Beverage, Cooking, Meals, Breakfast
+- Work: App Development, Programming, Meetings, Project Work
+- Food: Eating, Drinking Beverage, Cooking, Meals, Breakfast
 - Physical Activity: Exercise, Stretching, Running, Gym, Yoga
 - Entertainment: Watching TV, Gaming, Movies, Music
 - Home & Household: Household Cleaning, Chores, Laundry, Organizing
-- Wellness & Self-Care: Relaxing Outdoors, Sunbathing, Meditation, Rest
+- Health: Relaxing Outdoors, Sunbathing, Meditation, Rest
 - Social: Friends, Family, Date, Party, Hangout
 - Learning & Education: Reading, Studying, Course, Tutorial, Research
 - Other: Anything that doesn't clearly fit above
@@ -39,12 +39,12 @@ ${
 }
 
 Examples:
-- "ate lunch: chicken salad" → { "broadCategory": "Food & Nutrition", "subcategory": "Meals" }
+- "ate lunch: chicken salad" → { "broadCategory": "Food", "subcategory": "Meals" }
 - "went for a 30 minute run" → { "broadCategory": "Physical Activity", "subcategory": "Running" }
-- "worked on project report" → { "broadCategory": "Work & Professional", "subcategory": "Project Work" }
+- "worked on project report" → { "broadCategory": "Work", "subcategory": "Project Work" }
 - "watched a movie with friends" → { "broadCategory": "Entertainment", "subcategory": "Movies" }
 - "cleaned the kitchen" → { "broadCategory": "Home & Household", "subcategory": "Household Cleaning" }
-- "drank green tea" → { "broadCategory": "Food & Nutrition", "subcategory": "Drinking Beverage" }
+- "drank green tea" → { "broadCategory": "Food", "subcategory": "Drinking Beverage" }
 - "stretched for 10 minutes" → { "broadCategory": "Physical Activity", "subcategory": "Stretching" }
 
 User activity: "${text}"
@@ -111,16 +111,16 @@ export const CONVERSATION_PROMPT = (
 Your goal is to understand what activity the user did and gather enough context to log it meaningfully.
 
 When you have enough information to save the activity, you need to categorize it using a hierarchical system:
-- BROAD CATEGORY (top-level): Work & Professional, Food & Nutrition, Physical Activity, Entertainment, Home & Household, Wellness & Self-Care, Social, Learning & Education, or Other
+- BROAD CATEGORY (top-level): Work, Food, Physical Activity, Entertainment, Home & Household, Health, Social, Learning & Education, or Other
 - SUBCATEGORY (specific detail): A 1-3 word specific label (prefer existing subcategories when they fit)
 
 Broad Category Examples:
-- Work & Professional: App Development, Programming, Meetings, Project Work
-- Food & Nutrition: Eating, Drinking Beverage, Cooking, Meals
+- Work: App Development, Programming, Meetings, Project Work
+- Food: Eating, Drinking Beverage, Cooking, Meals
 - Physical Activity: Exercise, Stretching, Running, Gym
 - Entertainment: Watching TV, Gaming, Movies
 - Home & Household: Household Cleaning, Chores, Laundry
-- Wellness & Self-Care: Relaxing Outdoors, Sunbathing, Meditation
+- Health: Relaxing Outdoors, Sunbathing, Meditation
 - Social: Friends, Family, Date, Hangout
 - Learning & Education: Reading, Studying, Course, Tutorial
 
@@ -143,7 +143,7 @@ User: "tuna sandwich"
 Response: "That sounds great! I love tuna sandwiches."
 State: needsFollowUp=false, readyToSave=true
 Activity: "Ate dinner: tuna sandwich"
-BroadCategory: "Food & Nutrition"
+BroadCategory: "Food"
 Subcategory: "Meals"
 
 User: "went for a run"

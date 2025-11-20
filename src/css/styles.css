@@ -86,7 +86,36 @@ h2 {
     align-items: center;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+/* Scrollbar styling for .content */
+.content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+}
+
+.content:hover::-webkit-scrollbar-thumb {
+    background: rgba(190, 190, 190, 0.4);
+}
+
+.content:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(190, 190, 190, 0.6);
+}
+
+/* Firefox scrollbar styling */
+.content:hover {
+    scrollbar-color: rgba(190, 190, 190, 0.4) transparent;
 }
 
 input,
