@@ -65,7 +65,6 @@ export default function CategoryMigration() {
       console.log("✅ CategoryMigration: Retrieved categories:", categories);
 
       let updatedCount = 0;
-      let alreadyMigrated = 0;
 
       setStatus(
         (prev) => prev + `\nFound ${categories.length} categories to analyze\n`

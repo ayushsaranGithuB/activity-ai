@@ -121,7 +121,7 @@ export default function Input({ resetKey }: InputProps) {
         } = data.activityToSave;
 
         // Save to IndexedDB
-        const activity = await storage.addActivity({
+        await storage.addActivity({
           text: activityText,
           category,
           createdAt: Date.now(),

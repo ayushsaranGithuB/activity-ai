@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { storage } from "../lib/storage";
-import type { Category, Activity } from "../types";
+import type { Category } from "../types";
 
 interface CategoryRecommendation {
   broadCategory: string;

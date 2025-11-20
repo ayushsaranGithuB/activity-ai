@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:vite\" \"npm run dev:server\" --names \"VITE,API\" --prefix-colors \"cyan,magenta\"",
     "dev:vite": "vite",
-    "dev:server": "node server/index.js",
-    "build": "vite build",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
     "preview": "vite preview",
-    "server": "node server/index.js",
+    "server": "node dist-server/index.js",
     "start": "npm run build && npm run server",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
@@ -18,9 +20,11 @@
     "cap:open-android": "npx cap open android"
   },
   "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@fastify/static": "^8.0.2",
     "@google/genai": "^1.30.0",
-    "body-parser": "^2.2.0",
     "dotenv": "^17.2.3",
+    "fastify": "^5.2.0",
     "idb": "^8.0.3",
     "lucide-react": "^0.554.0",
     "node-fetch": "^3.3.2",
@@ -42,7 +46,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
-    "express": "^5.1.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.47.0",
     "vite": "^7.2.2"

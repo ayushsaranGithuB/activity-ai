@@ -1,0 +1,19 @@
+// API Routes Configuration
+
+import { FastifyInstance, FastifyPluginOptions } from "fastify";
+import { categorize } from "./categorize.js";
+import { insights } from "./insights.js";
+import { mergeCategories } from "./merge-categories.js";
+import { conversation } from "./conversation.js";
+import { health } from "./health.js";
+
+export default async function routes(
+    fastify: FastifyInstance,
+    _options: FastifyPluginOptions
+): Promise<void> {
+    fastify.post("/categorize", categorize);
+    fastify.post("/insights", insights);
+    fastify.post("/merge-categories", mergeCategories);
+    fastify.post("/conversation", conversation);
+    fastify.get("/health", health);
+}

@@ -1,7 +1,7 @@
 // Script to evaluate current categories in the database
 
 import { storage } from "./src/lib/storage";
-import type { Category, Activity } from "./src/types";
+import type { Category } from "./src/types";
 
 async function evaluateCategories() {
     console.log("📊 Evaluating Current Categories in Database\n");
@@ -55,7 +55,6 @@ async function evaluateCategories() {
         console.log("\n🔍 CATEGORY ANALYSIS\n");
 
         // Find potential duplicates or similar categories
-        const categoryNames = categories.map(c => c.name.toLowerCase());
         const potentialDuplicates: string[] = [];
 
         for (let i = 0; i < categories.length; i++) {

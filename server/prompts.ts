@@ -1,10 +1,10 @@
 // AI Prompts for Activity Categorization and Analysis
 
 export const CATEGORIZE_PROMPT = (
-  text,
-  existingCategories,
-  forceRecategorize = false
-) => `You are Activity AI, an agent that classifies freeform human activities into a hierarchical category system.
+    text: string,
+    existingCategories: string[],
+    forceRecategorize = false
+): string => `You are Activity AI, an agent that classifies freeform human activities into a hierarchical category system.
 
 Category Structure:
 - Each activity gets TWO classifications:
@@ -32,11 +32,10 @@ Rules:
 - The broad category helps group similar activities together
 - The subcategory provides specific detail
 
-${
-  forceRecategorize
-    ? "IMPORTANT: This is a recategorization request. Be MORE SPECIFIC than a generic category."
-    : ""
-}
+${forceRecategorize
+        ? "IMPORTANT: This is a recategorization request. Be MORE SPECIFIC than a generic category."
+        : ""
+    }
 
 Examples:
 - "ate lunch: chicken salad" → { "broadCategory": "Food", "subcategory": "Meals" }
@@ -48,19 +47,24 @@ Examples:
 - "stretched for 10 minutes" → { "broadCategory": "Physical Activity", "subcategory": "Stretching" }
 
 User activity: "${text}"
-Existing subcategories: ${
-  existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
-}
+Existing subcategories: ${existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
+    }
 
 Return JSON only: { "broadCategory": "<broad>", "subcategory": "<specific>" }`;
 
+interface Activity {
+    text: string;
+    category: string;
+    createdAt: number;
+}
+
 export const INSIGHTS_PROMPT = (
-  history,
-  categories,
-  weeklyTotals,
-  monthlyTotals,
-  yearlyTotals
-) => `You are Activity AI Insights. You summarize trends in user activity.
+    history: Activity[],
+    categories: string[],
+    weeklyTotals: Record<string, number>,
+    monthlyTotals: Record<string, number>,
+    yearlyTotals: Record<string, number>
+): string => `You are Activity AI Insights. You summarize trends in user activity.
 
 Given:
 - A list of past activities with timestamps
@@ -83,9 +87,7 @@ Yearly Totals: ${JSON.stringify(yearlyTotals)}
 
 Return JSON: { "insight": "<short summary>" }`;
 
-export const MERGE_CATEGORIES_PROMPT = (
-  categories
-) => `You help refine categories by identifying redundant or overlapping labels.
+export const MERGE_CATEGORIES_PROMPT = (categories: string[]): string => `You help refine categories by identifying redundant or overlapping labels.
 
 Given the following category list: ${categories.join(", ")}
 
@@ -102,11 +104,16 @@ Return JSON:
 If no merges are needed, return:
 { "merges": [] }`;
 
+interface ConversationMessage {
+    role: string;
+    content: string;
+}
+
 export const CONVERSATION_PROMPT = (
-  userMessage,
-  conversationHistory,
-  existingCategories
-) => `You are Activity AI, a friendly conversational assistant that helps users log their daily activities.
+    userMessage: string,
+    conversationHistory: ConversationMessage[],
+    existingCategories: string[]
+): string => `You are Activity AI, a friendly conversational assistant that helps users log their daily activities.
 
 Your goal is to understand what activity the user did and gather enough context to log it meaningfully.
 
@@ -165,9 +172,8 @@ Options: ["30 min", "1 hour", "2 hours", "3+ hours", "Other..."]
 
 Conversation History: ${JSON.stringify(conversationHistory || [])}
 User's Latest Message: "${userMessage}"
-Existing Subcategories: ${
-  existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
-}
+Existing Subcategories: ${existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
+    }
 
 Return JSON only:
 {

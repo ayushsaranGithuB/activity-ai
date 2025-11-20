@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
 import type { BroadCategory } from "../types";
-import {
-  calculateCategoryTrends,
-  generateTrendSummary,
-  getPeriodRange,
-} from "../lib/trends";
-import type { Activity, CategoryTrend, Category } from "../types";
+import { calculateCategoryTrends } from "../lib/trends";
+import type { Activity, CategoryTrend } from "../types";
 import "../css/trends.css";
 
 // Helper function to get period range with offset
@@ -85,6 +81,66 @@ function formatPeriodLabel(
   }
 }
 
+const BarChart = ({
+  trends,
+  onCategoryClick,
+}: {
+  trends: CategoryTrend[];
+  onCategoryClick?: (category: string) => void;
+}) => {
+  const colors = [
+    "#4db59a",
+    "#7ecfc0",
+    "#9bddd2",
+    "#b9e7e4",
+    "#ffa726",
+    "#66bb6a",
+    "#ab47bc",
+    "#ec407a",
+    "#5c6bc0",
+  ];
+
+  const total = trends.reduce((sum, trend) => sum + trend.activityCount, 0);
+  if (total === 0) return null;
+
+  const maxCount = Math.max(...trends.map((t) => t.activityCount));
+
+  return (
+    <div className="trends-bar-chart">
+      <div className="bar-chart-container">
+        {trends.map((trend, index) => {
+          const percentage = (trend.activityCount / total) * 100;
+          // Use flex-grow to proportionally scale bars
+          const flexGrow = trend.activityCount;
+          return (
+            <div
+              key={index}
+              className={`bar-item ${!onCategoryClick ? "non-clickable" : ""}`}
+              onClick={() => onCategoryClick?.(trend.category)}
+            >
+              <div
+                className="bar"
+                style={{
+                  flexGrow: flexGrow,
+                  background: colors[index % colors.length],
+                }}
+              >
+                <span className="bar-value">{trend.activityCount}</span>
+              </div>
+              <div className="bar-label">
+                <span className="bar-category">{trend.category}</span>
+                <span className="bar-percentage">
+                  {Math.round(percentage)}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const PieChart = ({
   trends,
   onCategoryClick,
@@ -108,30 +164,44 @@ const PieChart = ({
   const total = trends.reduce((sum, trend) => sum + trend.activityCount, 0);
   if (total === 0) return null;
 
-  let currentAngle = -90; // Start at top
-  const paths = trends.map((trend, index) => {
-    const percentage = (trend.activityCount / total) * 100;
-    const angle = (percentage / 100) * 360;
+  const paths = trends.reduce(
+    (acc, trend, index) => {
+      const percentage = (trend.activityCount / total) * 100;
+      const angle = (percentage / 100) * 360;
 
-    const startX = 50 + 40 * Math.cos((currentAngle * Math.PI) / 180);
-    const startY = 50 + 40 * Math.sin((currentAngle * Math.PI) / 180);
+      const startX = 50 + 40 * Math.cos((acc.currentAngle * Math.PI) / 180);
+      const startY = 50 + 40 * Math.sin((acc.currentAngle * Math.PI) / 180);
 
-    currentAngle += angle;
+      const newAngle = acc.currentAngle + angle;
 
-    const endX = 50 + 40 * Math.cos((currentAngle * Math.PI) / 180);
-    const endY = 50 + 40 * Math.sin((currentAngle * Math.PI) / 180);
+      const endX = 50 + 40 * Math.cos((newAngle * Math.PI) / 180);
+      const endY = 50 + 40 * Math.sin((newAngle * Math.PI) / 180);
 
-    const largeArc = angle > 180 ? 1 : 0;
+      const largeArc = angle > 180 ? 1 : 0;
 
-    const path = `M 50,50 L ${startX},${startY} A 40,40 0 ${largeArc},1 ${endX},${endY} Z`;
+      const path = `M 50,50 L ${startX},${startY} A 40,40 0 ${largeArc},1 ${endX},${endY} Z`;
 
-    return {
-      path,
-      color: colors[index % colors.length],
-      category: trend.category,
-      percentage: Math.round(percentage),
-    };
-  });
+      acc.paths.push({
+        path,
+        color: colors[index % colors.length],
+        category: trend.category,
+        percentage: Math.round(percentage),
+      });
+
+      acc.currentAngle = newAngle;
+
+      return acc;
+    },
+    {
+      paths: [] as Array<{
+        path: string;
+        color: string;
+        category: string;
+        percentage: number;
+      }>,
+      currentAngle: -90,
+    }
+  ).paths;
 
   return (
     <div className="trends-pie-chart">
@@ -175,10 +245,10 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [trends, setTrends] = useState<CategoryTrend[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [period, setPeriod] = useState<"week" | "month" | "year">("week");
   const [expandedBroad, setExpandedBroad] = useState<Set<string>>(new Set());
   const [periodOffset, setPeriodOffset] = useState(0); // 0 = current, -1 = previous, 1 = next
+  const [chartType, setChartType] = useState<"pie" | "bar">("pie");
 
   useEffect(() => {
     loadData();
@@ -203,7 +273,6 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
       const allCategories = await storage.getAllCategories();
 
       setActivities(allActivities);
-      setCategories(allCategories);
 
       // Get the date range for the current period + offset
       const range = getOffsetPeriodRange(period, periodOffset);
@@ -249,8 +318,6 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
       </div>
     );
   }
-
-  const summary = generateTrendSummary(trends);
 
   const handleCategoryClick = (category: string) => {
     if (onCategoryClick) {
@@ -341,15 +408,43 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
       </div>
 
       {period === "week" && sortedBroadCategories.length > 0 && (
-        <PieChart
-          trends={sortedBroadCategories.map(([broadCategory, group]) => ({
-            category: broadCategory,
-            broadCategory: broadCategory as BroadCategory,
-            totalMinutes: group.totalMinutes,
-            activityCount: group.totalActivities,
-          }))}
-          onCategoryClick={(broad) => toggleBroadCategory(broad)}
-        />
+        <>
+          <div className="chart-type-selector">
+            <button
+              onClick={() => setChartType("pie")}
+              className={chartType === "pie" ? "active" : ""}
+            >
+              Pie Chart
+            </button>
+            <button
+              onClick={() => setChartType("bar")}
+              className={chartType === "bar" ? "active" : ""}
+            >
+              Bar Chart
+            </button>
+          </div>
+          {chartType === "pie" ? (
+            <PieChart
+              trends={sortedBroadCategories.map(([broadCategory, group]) => ({
+                category: broadCategory,
+                broadCategory: broadCategory as BroadCategory,
+                totalMinutes: group.totalMinutes,
+                activityCount: group.totalActivities,
+              }))}
+              onCategoryClick={(broad) => toggleBroadCategory(broad)}
+            />
+          ) : (
+            <BarChart
+              trends={sortedBroadCategories.map(([broadCategory, group]) => ({
+                category: broadCategory,
+                broadCategory: broadCategory as BroadCategory,
+                totalMinutes: group.totalMinutes,
+                activityCount: group.totalActivities,
+              }))}
+              onCategoryClick={(broad) => toggleBroadCategory(broad)}
+            />
+          )}
+        </>
       )}
       <div className="trend-summary">
         {sortedBroadCategories.map(([broadCategory, group]) => (
