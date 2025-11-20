@@ -3,11 +3,11 @@ import Trends from "./components/Trends";
 import Input from "./components/Input";
 import ActivityList from "./components/ActivityList";
 import Header from "./components/Header";
-import DevOptions from "./components/DevOptions";
+import Settings from "./components/Settings";
 import { Toaster } from "react-hot-toast";
 
 export default function App() {
-  type ViewType = "home" | "input" | "trends";
+  type ViewType = "home" | "input" | "trends" | "settings";
 
   const [view, setView] = useState<ViewType>("home");
   const [inputResetKey, setInputResetKey] = useState(0);
@@ -48,9 +48,8 @@ export default function App() {
           />
         )}
         {view === "trends" && <Trends onCategoryClick={switchToActivityList} />}
+        {view === "settings" && <Settings />}
       </main>
-
-      <DevOptions />
     </div>
   );
 }

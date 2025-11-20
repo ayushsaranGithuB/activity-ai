@@ -7,7 +7,7 @@
 
 :root {
     --color-primary: #e0e0e0;
-    --color-primary-hover: #0056b3;
+    --color-primary-hover: #b3b3b3;
     --color-bg: #e0e0e0;
     --color-fg: #000000;
     --color-border: #ccc;
@@ -31,6 +31,10 @@ body {
     background-color: var(--color-bg);
     color: var(--color-fg);
     font-size: 16px;
+
+}
+
+#root {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -47,6 +51,7 @@ h2 {
 }
 
 .app {
+    width: 100%;
     max-width: 540px;
     margin: 0 auto;
     padding: 1.25em;
@@ -58,6 +63,7 @@ h2 {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    flex: 1;
 }
 
 @media screen and (min-width: 600px) {
@@ -432,4 +438,25 @@ h2.system-prompt {
 .quick-option-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    overflow: auto;
+    padding: 20px;
+}
+
+.modal-content {
+    background-color: white;
+    max-width: 1200px;
+    margin: 0 auto;
+    border-radius: 8px;
 }

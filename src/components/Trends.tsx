@@ -359,9 +359,13 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
               className="trend-item broad-category"
               onClick={() => toggleBroadCategory(broadCategory)}
             >
-              <div>
-                <div className="name">
-                  {expandedBroad.has(broadCategory) ? "▼" : "▶"} {broadCategory}
+              <div className="category-header">
+                <div
+                  className={
+                    expandedBroad.has(broadCategory) ? "open" : "closed"
+                  }
+                >
+                  {broadCategory}
                 </div>
                 <div className="trend-meta">
                   {group.totalActivities} activities • {group.totalMinutes} min

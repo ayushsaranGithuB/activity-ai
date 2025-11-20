@@ -1,9 +1,14 @@
-import { ChartNoAxesCombined, ClipboardClock, House } from "lucide-react";
+import {
+  ChartNoAxesCombined,
+  ClipboardClock,
+  House,
+  Settings,
+} from "lucide-react";
 
 export default function Header({
   changeView,
 }: {
-  changeView: (view: "home" | "input" | "trends") => void;
+  changeView: (view: "home" | "input" | "trends" | "settings") => void;
 }) {
   return (
     <header className="topbar">
@@ -16,6 +21,9 @@ export default function Header({
         </button>
         <button id="nav-btn-trends" onClick={() => changeView("trends")}>
           <ChartNoAxesCombined size={16} /> Trends
+        </button>
+        <button id="nav-btn-settings" onClick={() => changeView("settings")}>
+          <Settings size={16} />
         </button>
       </nav>
     </header>

@@ -17,13 +17,13 @@
 }
 
 .trend-item {
-    padding: 10px;
+    padding: 10px 10px 10px 0;
     margin-bottom: 8px;
-    background: #7a787821;
     border-radius: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 22px;
 }
 
 .trend-item .name {
@@ -33,6 +33,16 @@
 .trend-item .count {
     color: var(--color-primary);
     font-weight: bold;
+}
+
+.category-header {
+    line-height: 1.2em;
+    width: 100%;
+}
+
+.category-header .trend-meta {
+    border-top: 1px solid #c1c1c1;
+
 }
 
 /* Pie Chart ------------------------- */
@@ -118,26 +128,29 @@
 
 .trend-item.broad-category {
     cursor: pointer;
-    background-color: #f8f9fa;
     font-weight: 600;
-    border-left: 4px solid #4db59a;
 }
 
 .trend-meta {
     font-size: 12px;
-    color: #666;
+    font-family: sans-serif;
+    color: #999;
+    font-weight: 400;
 }
 
 .subcategories-container {
-    margin-left: 20px;
-    margin-top: 8px;
+    margin-left: 10px;
+    margin-top: 0;
 }
 
 .trend-item.subcategory {
     cursor: pointer;
     transition: all 0.2s;
-    background-color: white;
-    border-left: 2px solid #e0e0e0;
+    padding: 0;
+    font-size: 12px;
+    margin-bottom: 1em;
+    font-family: sans-serif;
+    color: #666;
 }
 
 .trend-item.subcategory.non-clickable {
