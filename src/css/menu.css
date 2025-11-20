@@ -52,12 +52,16 @@
     font-size: 18px;
     display: flex;
     flex-direction: column;
-    transition: opacity 0.3s ease-out;
+    transition: opacity 0.3s ease-out, visibility 0.3s;
     overflow-y: auto;
+    pointer-events: none;
+    visibility: hidden;
 }
 
 #main-menu.menu-open {
     opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
 }
 
 .menu-close-btn {
