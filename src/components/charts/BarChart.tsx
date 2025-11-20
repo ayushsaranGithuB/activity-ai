@@ -15,26 +15,16 @@ interface BarChartProps {
   onCategoryClick?: (category: string) => void;
 }
 
-const colors = [
-  "#6B8E7F",
-  "#8FA3B0",
-  "#B89B9D",
-  "#9B8E9F",
-  "#A8927D",
-  "#7F9AA3",
-  "#9F8E8A",
-  "#86A397",
-  "#A89BA3",
-  "#8B9A8E",
-];
+const colors = ["#222", "#444", "#666", "#888", "#aaa", "#ccc", "#eee"];
 
 export default function BarChart({ trends, onCategoryClick }: BarChartProps) {
   if (trends.length === 0) return null;
 
   const data = trends.map((trend) => ({
-    name: trend.category,
-    count: trend.activityCount,
+    name: `${trend.category} (${trend.activityCount})`,
+    totalMinutes: trend.totalMinutes,
     category: trend.category,
+    activityCount: trend.activityCount,
   }));
 
   return (
@@ -42,19 +32,24 @@ export default function BarChart({ trends, onCategoryClick }: BarChartProps) {
       <ResponsiveContainer width="100%" height={300}>
         <RechartsBar
           data={data}
-          margin={{ top: 20, right: 20, left: -20, bottom: 60 }}
+          margin={{ top: 20, right: 20, left: -20, bottom: 10 }}
         >
           <XAxis
             dataKey="name"
             angle={-45}
             textAnchor="end"
             height={100}
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 16 }}
           />
-          <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            label={{ value: "Minutes", angle: -90, position: "insideLeft" }}
+          />
+          <Tooltip
+            formatter={(value, name, props) => [`${value} min`, "Time"]}
+          />
           <Bar
-            dataKey="count"
+            dataKey="totalMinutes"
             onClick={(data) => onCategoryClick?.(data.category)}
             cursor={onCategoryClick ? "pointer" : "default"}
           >

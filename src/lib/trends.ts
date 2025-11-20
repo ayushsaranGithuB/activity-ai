@@ -37,7 +37,7 @@ export function getStartOfYear(timestamp: number): number {
 }
 
 export function getPeriodRange(
-    period: "week" | "month" | "year",
+    period: "day" | "week" | "month" | "year",
     timestamp: number = Date.now()
 ): TrendPeriod {
     let start: number;
@@ -45,6 +45,18 @@ export function getPeriodRange(
     let label: string;
 
     switch (period) {
+        case "day": {
+            const d = new Date(timestamp);
+            d.setHours(0, 0, 0, 0);
+            start = d.getTime();
+            end = start + 24 * 60 * 60 * 1000 - 1;
+            label = d.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            });
+            break;
+        }
         case "week": {
             start = getStartOfWeek(timestamp);
             end = start + 7 * 24 * 60 * 60 * 1000 - 1;
@@ -82,7 +94,7 @@ export function getPeriodRange(
 
 export function calculateCategoryTrends(
     activities: Activity[],
-    period: "week" | "month" | "year"
+    period: "day" | "week" | "month" | "year"
 ): CategoryTrend[] {
     const { start, end } = getPeriodRange(period);
 

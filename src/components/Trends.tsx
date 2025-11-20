@@ -7,6 +7,7 @@ import { getOffsetPeriodRange, formatPeriodLabel } from "../lib/date-utils";
 import PieChart from "./charts/PieChart";
 import BarChart from "./charts/BarChart";
 import "../css/trends.css";
+import { ChartNoAxesCombined } from "lucide-react";
 
 interface TrendsProps {
   onCategoryClick?: (
@@ -16,85 +17,170 @@ interface TrendsProps {
 }
 
 export default function Trends({ onCategoryClick }: TrendsProps) {
-  const [loading, setLoading] = useState(true);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [trends, setTrends] = useState<CategoryTrend[]>([]);
-  const [period, setPeriod] = useState<"week" | "month" | "year">("week");
-  const [expandedBroad, setExpandedBroad] = useState<Set<string>>(new Set());
-  const [periodOffset, setPeriodOffset] = useState(0); // 0 = current, -1 = previous, 1 = next
-  const [chartType, setChartType] = useState<"pie" | "bar">("pie");
-  const [aiSummary, setAiSummary] = useState<string>("");
-  const [summaryLoading, setSummaryLoading] = useState(false);
-
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, periodOffset]);
-
-  // Expand all broad categories by default when trends load
-  useEffect(() => {
-    if (trends.length > 0) {
-      const allBroadCategories = new Set(
-        trends.map((t) => t.broadCategory || "Other")
-      );
-      setExpandedBroad(allBroadCategories);
-    }
-  }, [trends]);
-
-  const loadData = async () => {
+  // Load all period data (today, week, month)
+  const loadAllPeriodData = async () => {
     setLoading(true);
     try {
       await storage.init();
-      const allActivities = await storage.getAllActivities();
-      const allCategories = await storage.getAllCategories();
+      const allActs = await storage.getAllActivities();
+      const allCats = await storage.getAllCategories();
+      setAllActivities(allActs);
 
-      setActivities(allActivities);
-
-      // Get the date range for the current period + offset
-      const range = getOffsetPeriodRange(period, periodOffset);
-
-      // Filter activities to the date range
-      const filteredActivities = allActivities.filter(
-        (a) => a.createdAt >= range.start && a.createdAt <= range.end
+      // Today
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+      const todayActs = allActs.filter(
+        (a) =>
+          a.createdAt >= todayStart.getTime() &&
+          a.createdAt <= todayEnd.getTime()
       );
-
-      const periodTrends = calculateCategoryTrends(filteredActivities, period);
-
-      // Enrich trends with broad category information
-      const enrichedTrends = periodTrends.map((trend) => {
-        const category = allCategories.find((c) => c.name === trend.category);
-        return {
-          ...trend,
-          broadCategory: category?.broadCategory || "Other",
-        };
-      });
-
-      setTrends(enrichedTrends);
-
-      // Generate AI summary if we have activities in this period
-      if (filteredActivities.length > 0) {
-        generateAISummary(filteredActivities, enrichedTrends);
-      } else {
-        setAiSummary("");
+      // For today, use 'day' for trends (charts) and summary, with caching
+      const todayTrends = calculateCategoryTrends(todayActs, "day").map(
+        (trend) => {
+          const cat = allCats.find((c) => c.name === trend.category);
+          return { ...trend, broadCategory: cat?.broadCategory || "Other" };
+        }
+      );
+      let todaySummary = "";
+      if (todayActs.length > 0) {
+        const cacheKey = `trends-summary-day`;
+        const cached = localStorage.getItem(cacheKey);
+        let cacheValid = false;
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (
+              parsed.timestamp &&
+              parsed.summary &&
+              Date.now() - parsed.timestamp < 6 * 60 * 60 * 1000
+            ) {
+              todaySummary = parsed.summary;
+              cacheValid = true;
+            }
+          } catch {}
+        }
+        if (!cacheValid) {
+          todaySummary =
+            (await generateAISummary(todayActs, todayTrends, true, "day")) ||
+            "";
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({ summary: todaySummary, timestamp: Date.now() })
+          );
+        }
       }
+
+      // Week
+      const weekRange = getOffsetPeriodRange("week", 0);
+      const weekActs = allActs.filter(
+        (a) => a.createdAt >= weekRange.start && a.createdAt <= weekRange.end
+      );
+      const weekTrends = calculateCategoryTrends(weekActs, "week").map(
+        (trend) => {
+          const cat = allCats.find((c) => c.name === trend.category);
+          return { ...trend, broadCategory: cat?.broadCategory || "Other" };
+        }
+      );
+      let weekSummary = "";
+      if (weekActs.length > 0) {
+        const cacheKey = `trends-summary-week`;
+        const cache = localStorage.getItem(cacheKey);
+        let cacheObj: { summary: string; timestamp: number } | null = null;
+        if (cache) {
+          try {
+            cacheObj = JSON.parse(cache);
+          } catch {}
+        }
+        const now = Date.now();
+        const sixHours = 6 * 60 * 60 * 1000;
+        if (cacheObj && now - cacheObj.timestamp < sixHours) {
+          weekSummary = cacheObj.summary;
+        } else {
+          weekSummary =
+            (await generateAISummary(weekActs, weekTrends, true, "week")) || "";
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({ summary: weekSummary, timestamp: now })
+          );
+        }
+      }
+
+      // Month
+      const monthRange = getOffsetPeriodRange("month", 0);
+      const monthActs = allActs.filter(
+        (a) => a.createdAt >= monthRange.start && a.createdAt <= monthRange.end
+      );
+      const monthTrends = calculateCategoryTrends(monthActs, "month").map(
+        (trend) => {
+          const cat = allCats.find((c) => c.name === trend.category);
+          return { ...trend, broadCategory: cat?.broadCategory || "Other" };
+        }
+      );
+      let monthSummary = "";
+      if (monthActs.length > 0) {
+        const cacheKey = `trends-summary-month`;
+        const cache = localStorage.getItem(cacheKey);
+        let cacheObj: { summary: string; timestamp: number } | null = null;
+        if (cache) {
+          try {
+            cacheObj = JSON.parse(cache);
+          } catch {}
+        }
+        const now = Date.now();
+        const sixHours = 6 * 60 * 60 * 1000;
+        if (cacheObj && now - cacheObj.timestamp < sixHours) {
+          monthSummary = cacheObj.summary;
+        } else {
+          monthSummary =
+            (await generateAISummary(monthActs, monthTrends, true, "month")) ||
+            "";
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({ summary: monthSummary, timestamp: now })
+          );
+        }
+      }
+
+      setPeriodData({
+        today: {
+          activities: todayActs,
+          trends: todayTrends,
+          summary: todaySummary,
+        },
+        week: {
+          activities: weekActs,
+          trends: weekTrends,
+          summary: weekSummary,
+        },
+        month: {
+          activities: monthActs,
+          trends: monthTrends,
+          summary: monthSummary,
+        },
+      });
     } catch (err) {
       console.error("Failed to load trends:", err);
     } finally {
       setLoading(false);
     }
   };
-
+  // Helper to generate AI summary
   const generateAISummary = async (
     filteredActivities: Activity[],
-    enrichedTrends: CategoryTrend[]
+    enrichedTrends: CategoryTrend[],
+    returnSummary?: boolean,
+    periodType?: "day" | "week" | "month"
   ) => {
     setSummaryLoading(true);
+    setSummaryLoadingFor(periodType || "week");
     try {
       const response = await fetch("/api/trends-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          period,
+          period: periodType || "week",
           trends: enrichedTrends.map((t) => ({
             category: t.category,
             activityCount: t.activityCount,
@@ -111,25 +197,46 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
 
       if (response.ok) {
         const data = await response.json();
-        setAiSummary(data.summary);
+        if (returnSummary) {
+          return data.summary;
+        }
       }
     } catch (error) {
       console.error("Failed to generate AI summary:", error);
     } finally {
       setSummaryLoading(false);
+      setSummaryLoadingFor(null);
     }
+    return undefined;
   };
+  const [loading, setLoading] = useState(true);
+  const [allActivities, setAllActivities] = useState<Activity[]>([]);
+  const [periodData, setPeriodData] = useState<{
+    today: { activities: Activity[]; trends: CategoryTrend[]; summary: string };
+    week: { activities: Activity[]; trends: CategoryTrend[]; summary: string };
+    month: { activities: Activity[]; trends: CategoryTrend[]; summary: string };
+  }>({
+    today: { activities: [], trends: [], summary: "" },
+    week: { activities: [], trends: [], summary: "" },
+    month: { activities: [], trends: [], summary: "" },
+  });
+  const [expanded, setExpanded] = useState<{
+    today: boolean;
+    week: boolean;
+    month: boolean;
+  }>({ today: false, week: false, month: false });
+  const [chartType, setChartType] = useState<"pie" | "bar">("bar");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryLoadingFor, setSummaryLoadingFor] = useState<
+    "day" | "week" | "month" | null
+  >(null);
 
-  if (loading) {
-    return (
-      <div>
-        <h2>Trends</h2>
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    loadAllPeriodData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (activities.length === 0) {
+  if (allActivities.length === 0) {
     return (
       <div>
         <h2>Trends</h2>
@@ -138,209 +245,137 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
     );
   }
 
-  const handleCategoryClick = (category: string) => {
-    if (onCategoryClick) {
-      const dateRange = getOffsetPeriodRange(period, periodOffset);
-      onCategoryClick(category, dateRange);
-    }
-  };
-
-  // Group trends by broad category
-  interface BroadCategoryGroup {
-    subcategories: CategoryTrend[];
-    totalActivities: number;
-    totalMinutes: number;
-  }
-
-  const groupedTrends = trends.reduce((acc, trend) => {
-    const broad = trend.broadCategory || "Other";
-    if (!acc[broad]) {
-      acc[broad] = {
-        subcategories: [],
-        totalActivities: 0,
-        totalMinutes: 0,
-      };
-    }
-    acc[broad].subcategories.push(trend);
-    acc[broad].totalActivities += trend.activityCount;
-    acc[broad].totalMinutes += trend.totalMinutes;
-    return acc;
-  }, {} as Record<string, BroadCategoryGroup>);
-
-  // Sort broad categories by total activities
-  const sortedBroadCategories = (
-    Object.entries(groupedTrends) as [string, BroadCategoryGroup][]
-  ).sort(([, a], [, b]) => b.totalActivities - a.totalActivities);
-
-  const toggleBroadCategory = (broad: string) => {
-    const newExpanded = new Set(expandedBroad);
-    if (newExpanded.has(broad)) {
-      newExpanded.delete(broad);
-    } else {
-      newExpanded.add(broad);
-    }
-    setExpandedBroad(newExpanded);
-  };
-
   return (
     <div className="trends">
-      <div className="activity-header">
-        <h2>Trends</h2>
-        <div className="period-selector">
-          <button
-            onClick={() => {
-              setPeriod("week");
-              setPeriodOffset(0);
-            }}
-            className={period === "week" ? "active" : ""}
-          >
-            Week
-          </button>
-          <button
-            onClick={() => {
-              setPeriod("month");
-              setPeriodOffset(0);
-            }}
-            className={period === "month" ? "active" : ""}
-          >
-            Month
-          </button>
-          <button
-            onClick={() => {
-              setPeriod("year");
-              setPeriodOffset(0);
-            }}
-            className={period === "year" ? "active" : ""}
-          >
-            Year
-          </button>
-        </div>
-      </div>
+      <h2 className="trends-header">
+        <ChartNoAxesCombined size={24} />
+        Trends
+      </h2>
+      {["today", "week", "month"].map((periodKey) => {
+        const label =
+          periodKey === "today"
+            ? "Today"
+            : periodKey.charAt(0).toUpperCase() + periodKey.slice(1);
+        const data = periodData[periodKey as "today" | "week" | "month"];
+        const periodType = (periodKey === "today" ? "day" : periodKey) as
+          | "day"
+          | "week"
+          | "month";
+        return (
+          <div key={periodKey} className="trend-period-section">
+            <div className="chart-type-selector ">
+              <h3>{label}</h3>
 
-      <div className="trends-timeline-nav">
-        <button onClick={() => setPeriodOffset(periodOffset - 1)}>←</button>
-        <span>{formatPeriodLabel(period, periodOffset)}</span>
-        <button
-          onClick={() => setPeriodOffset(periodOffset + 1)}
-          disabled={periodOffset >= 0}
-        >
-          →
-        </button>
-      </div>
+              <button
+                onClick={() => setChartType("pie")}
+                className={chartType === "pie" ? "active" : ""}
+                disabled={summaryLoadingFor === periodType}
+                title={
+                  summaryLoadingFor === periodType
+                    ? "Generating summary..."
+                    : ""
+                }
+              >
+                Pie Chart
+              </button>
+              <button
+                onClick={() => setChartType("bar")}
+                className={chartType === "bar" ? "active" : ""}
+                disabled={summaryLoadingFor === periodType}
+                title={
+                  summaryLoadingFor === periodType
+                    ? "Generating summary..."
+                    : ""
+                }
+              >
+                Bar Chart
+              </button>
+            </div>
+            {data.trends.length > 0 ? (
+              <>
+                {chartType === "pie" ? (
+                  <PieChart trends={data.trends} />
+                ) : (
+                  <BarChart trends={data.trends} />
+                )}
 
-      {/* Trends AI Summary */}
-      {aiSummary && (
-        <div className="ai-summary">
-          <p>{aiSummary}</p>
-        </div>
-      )}
-      {summaryLoading && (
-        <div className="ai-summary loading">
-          <p>Generating insights...</p>
-        </div>
-      )}
+                {/* Show spinner when generating summary for this period. */}
+                {(() => {
+                  const periodType = periodKey === "today" ? "day" : periodKey;
+                  if (summaryLoadingFor === periodType) {
+                    return (
+                      <div className="ai-summary loading">
+                        <div className="summary-spinner" aria-hidden />
+                        <p>Generating summary…</p>
+                      </div>
+                    );
+                  }
 
-      <h3>Here is a breakdown of your activities by category:</h3>
-
-      {sortedBroadCategories.length > 0 && (
-        <>
-          {chartType === "pie" ? (
-            <PieChart
-              trends={sortedBroadCategories.map(([broadCategory, group]) => ({
-                category: broadCategory,
-                broadCategory: broadCategory as BroadCategory,
-                totalMinutes: group.totalMinutes,
-                activityCount: group.totalActivities,
-              }))}
-              onCategoryClick={(broad) => toggleBroadCategory(broad)}
-            />
-          ) : (
-            <BarChart
-              trends={sortedBroadCategories.map(([broadCategory, group]) => ({
-                category: broadCategory,
-                broadCategory: broadCategory as BroadCategory,
-                totalMinutes: group.totalMinutes,
-                activityCount: group.totalActivities,
-              }))}
-              onCategoryClick={(broad) => toggleBroadCategory(broad)}
-            />
-          )}
-          <div className="chart-type-selector slide-selector">
-            <button
-              onClick={() => setChartType("pie")}
-              className={chartType === "pie" ? "active" : ""}
-            >
-              Pie Chart
-            </button>
-            <button
-              onClick={() => setChartType("bar")}
-              className={chartType === "bar" ? "active" : ""}
-            >
-              Bar Chart
-            </button>
-          </div>
-        </>
-      )}
-      <div className="trend-summary">
-        {sortedBroadCategories.map(([broadCategory, group]) => (
-          <div key={broadCategory} className="trend-group">
-            {/* Broad Category Header */}
-            <div
-              className="trend-item broad-category"
-              onClick={() => toggleBroadCategory(broadCategory)}
-            >
-              <div className="category-header">
-                <div
-                  className={
-                    expandedBroad.has(broadCategory) ? "open" : "closed"
+                  return (
+                    data.summary && (
+                      <div className="ai-summary">
+                        <p>{data.summary}</p>
+                      </div>
+                    )
+                  );
+                })()}
+                <button
+                  className="expand-activities-btn"
+                  onClick={() =>
+                    setExpanded((prev) => ({
+                      ...prev,
+                      [periodKey]: !prev[periodKey],
+                    }))
                   }
                 >
-                  {broadCategory}
-                </div>
-                <div className="trend-meta">
-                  {group.totalActivities} activities • {group.totalMinutes} min
-                  {" • "}
-                  {group.subcategories.length}{" "}
-                  {group.subcategories.length === 1
-                    ? "subcategory"
-                    : "subcategories"}
-                </div>
-              </div>
-              <div className="count">{group.totalActivities}</div>
-            </div>
-
-            {/* Subcategories (collapsible) */}
-            {expandedBroad.has(broadCategory) && (
-              <div className="subcategories-container">
-                {group.subcategories.map((trend) => (
-                  <div
-                    key={trend.category}
-                    className={`trend-item subcategory ${
-                      !onCategoryClick ? "non-clickable" : ""
-                    }`}
-                    onClick={() => handleCategoryClick(trend.category)}
-                  >
-                    <div>
-                      <div className="name">{trend.category}</div>
-                      <div className="trend-meta">
-                        {trend.activityCount} activities • {trend.totalMinutes}{" "}
-                        min
-                        {trend.percentageOfTotal &&
-                          ` • ${Math.round(trend.percentageOfTotal)}% of total`}
-                      </div>
-                    </div>
-                    <div className="count">{trend.activityCount}</div>
+                  {expanded[periodKey as "today" | "week" | "month"]
+                    ? "Hide Activities"
+                    : "Show Activities"}
+                </button>
+                {expanded[periodKey as "today" | "week" | "month"] && (
+                  <div className="activities-list">
+                    {data.activities.length === 0 ? (
+                      <p style={{ color: "#666", fontStyle: "italic" }}>
+                        No activities for {label.toLowerCase()}.
+                      </p>
+                    ) : (
+                      data.activities.map((activity) => (
+                        <div key={activity.id} className="activity-item">
+                          <div className="activity-row">
+                            <span className="activity-time">
+                              {new Date(activity.createdAt).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )}
+                            </span>
+                            <span className="activity-separator">-</span>
+                            <span className="activity-text">
+                              {activity.text}
+                            </span>
+                          </div>
+                          <div className="activity-actions">
+                            <span className="activity-category">
+                              {activity.category}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
+            ) : (
+              <p style={{ color: "#666", fontStyle: "italic" }}>
+                No data for {label.toLowerCase()}.
+              </p>
             )}
           </div>
-        ))}
-      </div>
-
-      <div className="trends-total">
-        <strong>Total activities:</strong> {activities.length}
-      </div>
+        );
+      })}
     </div>
   );
 }

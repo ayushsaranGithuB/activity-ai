@@ -13,18 +13,7 @@ interface PieChartProps {
   onCategoryClick?: (category: string) => void;
 }
 
-const colors = [
-  "#6B8E7F",
-  "#8FA3B0",
-  "#B89B9D",
-  "#9B8E9F",
-  "#A8927D",
-  "#7F9AA3",
-  "#9F8E8A",
-  "#86A397",
-  "#A89BA3",
-  "#8B9A8E",
-];
+const colors = ["#222", "#444", "#666", "#888", "#aaa", "#ccc", "#eee"];
 
 export default function PieChart({ trends, onCategoryClick }: PieChartProps) {
   if (trends.length === 0) return null;

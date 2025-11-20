@@ -202,6 +202,19 @@ export default function Settings() {
           <button onClick={clearAllData} className="btn-danger">
             Clear All Data
           </button>
+          <button
+            onClick={() => {
+              if (!confirm("Clear cached summaries for day, week, and month?"))
+                return;
+              localStorage.removeItem("trends-summary-day");
+              localStorage.removeItem("trends-summary-week");
+              localStorage.removeItem("trends-summary-month");
+              alert("Cached summaries cleared!");
+            }}
+            className="btn-warning"
+          >
+            Clear Cached Summaries
+          </button>
         </div>
         <p className="settings-warning">
           Warning: Clearing data cannot be undone!
