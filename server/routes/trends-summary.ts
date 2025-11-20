@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { generateAISummary } from "../services/ai.js";
-import { getTrendsSummaryPrompt } from "../prompts.js";
+import { getTrendsSummaryPrompt } from "../prompts/index.js";
 
 interface TrendData {
     category: string;

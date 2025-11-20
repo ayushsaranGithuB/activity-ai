@@ -2,7 +2,7 @@
 
 import { FastifyRequest, FastifyReply } from "fastify";
 import { generateContent, isAIInitialized } from "../services/ai.js";
-import { CATEGORIZE_PROMPT } from "../prompts.js";
+import { CATEGORIZE_PROMPT } from "../prompts/index.js";
 
 interface CategorizeBody {
     text: string;

@@ -1,8 +1,8 @@
 // Conversation Route Handler
 
 import { FastifyRequest, FastifyReply } from "fastify";
-import { generateContent, isAIInitialized } from "../services/ai.js";
-import { CONVERSATION_PROMPT } from "../prompts.js";
+import { generateContent } from "../services/ai.js";
+import { CONVERSATION_PROMPT } from "../prompts/index.js";
 
 interface ConversationMessage {
     role: string;

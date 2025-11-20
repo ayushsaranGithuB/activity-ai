@@ -1,8 +1,8 @@
 // Merge Categories Route Handler
 
 import { FastifyRequest, FastifyReply } from "fastify";
-import { generateContent, isAIInitialized } from "../services/ai.js";
-import { MERGE_CATEGORIES_PROMPT } from "../prompts.js";
+import { generateContent } from "../services/ai.js";
+import { MERGE_CATEGORIES_PROMPT } from "../prompts/index.js";
 
 interface MergeCategoriesBody {
     categories?: string[];
