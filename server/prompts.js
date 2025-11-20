@@ -2,17 +2,35 @@
 
 export const CATEGORIZE_PROMPT = (
   text,
-  existingCategories
+  existingCategories,
+  forceRecategorize = false
 ) => `You are Activity AI, an agent that classifies freeform human activities into short, human-friendly categories.
 
 Rules:
 - Return ONLY a category label.
 - Category must be 1–3 words.
-- Category must be general, not overly specific.
-- Prefer using existing categories if provided.
+- Category must be descriptive and meaningful.
+- Prefer using existing categories ONLY if they truly match the activity.
+- Create new specific categories when existing ones don't fit well.
 - DO NOT output sentences, explanations, or lists.
-- Capitalize each word in the category (e.g., "Home Improvement").
-- If uncertain, return "General".
+- Capitalize each word in the category (e.g., "Home Improvement", "Exercise", "Cooking").
+- AVOID generic categories like "General", "Other", or "Uncategorized" unless absolutely necessary.
+- Think about what type of activity this is: Work, Exercise, Food, Entertainment, Social, Learning, Household, etc.
+
+${
+  forceRecategorize
+    ? "IMPORTANT: This is a recategorization request. Be MORE SPECIFIC than a generic category."
+    : ""
+}
+
+Examples:
+- "ate lunch: chicken salad" → "Meals" 
+- "went for a 30 minute run" → "Exercise"
+- "worked on project report" → "Work"
+- "watched a movie with friends" → "Entertainment"
+- "cleaned the kitchen" → "Household"
+- "read a book for 1 hour" → "Reading"
+- "had coffee with Sarah" → "Social"
 
 User activity: "${text}"
 Existing categories: ${

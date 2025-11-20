@@ -11,6 +11,11 @@ export default function App() {
 
   const [view, setView] = useState<ViewType>("home");
   const [inputResetKey, setInputResetKey] = useState(0);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [filterDateRange, setFilterDateRange] = useState<{
+    start: number;
+    end: number;
+  } | null>(null);
 
   function switchView(newView: ViewType) {
     setView(newView);
@@ -20,6 +25,15 @@ export default function App() {
     }
   }
 
+  function switchToActivityList(
+    category?: string,
+    dateRange?: { start: number; end: number }
+  ) {
+    setFilterCategory(category || null);
+    setFilterDateRange(dateRange || null);
+    setView("input");
+  }
+
   return (
     <div className="app">
       <Toaster position="bottom-right" />
@@ -27,8 +41,13 @@ export default function App() {
 
       <main className="content">
         {view === "home" && <Input resetKey={inputResetKey} />}
-        {view === "input" && <ActivityList />}
-        {view === "trends" && <Trends />}
+        {view === "input" && (
+          <ActivityList
+            initialCategory={filterCategory}
+            initialDateRange={filterDateRange}
+          />
+        )}
+        {view === "trends" && <Trends onCategoryClick={switchToActivityList} />}
       </main>
 
       <DevOptions />

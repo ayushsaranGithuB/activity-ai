@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { storage } from "../lib/storage";
 import { testDatabase } from "../test-db";
 
 export default function DevOptions() {
+  const [isRecategorizing, setIsRecategorizing] = useState(false);
+
   const runDatabaseTest = async () => {
     console.clear();
     await testDatabase();
@@ -28,10 +30,144 @@ export default function DevOptions() {
     }
   };
 
+  const recategorizeActivities = async () => {
+    if (
+      !confirm(
+        "This will re-analyze all activities and update their categories. This may take a few moments. Continue?"
+      )
+    )
+      return;
+
+    setIsRecategorizing(true);
+
+    try {
+      const activities = await storage.getAllActivities();
+
+      // Focus on activities with generic categories that need better classification
+      // TODO: In the future, this could run as a weekly background job
+      // - Could be triggered via a service worker or scheduled task
+      // - Should run during low-usage periods (e.g., 3am local time)
+      // - Could batch process activities added in the last week
+      // - Should maintain a log of recategorization changes
+      const generalActivities = activities.filter(
+        (a) =>
+          a.category === "General" ||
+          a.category === "Uncategorized" ||
+          a.category === "Other"
+      );
+
+      console.log(
+        `🔄 Recategorizing ${generalActivities.length} activities...`
+      );
+
+      let updated = 0;
+      let failed = 0;
+
+      // Get all existing categories (excluding generic ones)
+      const allCategories = await storage.getCategoryNames();
+      const goodCategories = allCategories.filter(
+        (c) => c !== "General" && c !== "Uncategorized" && c !== "Other"
+      );
+
+      // Process activities in batches to avoid overwhelming the API
+      for (const activity of generalActivities) {
+        try {
+          const res = await fetch("/api/categorize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: activity.text,
+              existingCategories: goodCategories,
+              forceRecategorize: true, // Signal that we want a more specific category
+            }),
+          });
+
+          const data = await res.json();
+          const newCategory = data.category;
+
+          // Only update if we got a better category
+          if (
+            newCategory &&
+            newCategory !== activity.category &&
+            newCategory !== "General" &&
+            newCategory !== "Uncategorized"
+          ) {
+            const oldCategory = activity.category;
+            activity.category = newCategory;
+            await storage.updateActivity(activity);
+
+            // Update category counts
+            const newCat = await storage.getCategory(newCategory);
+            if (newCat) {
+              newCat.activityCount++;
+              newCat.totalMinutes += 30;
+              newCat.lastUsedAt = Date.now();
+              await storage.addOrUpdateCategory(newCat);
+            } else {
+              await storage.addOrUpdateCategory({
+                name: newCategory,
+                totalMinutes: 30,
+                activityCount: 1,
+                lastUsedAt: Date.now(),
+              });
+            }
+
+            // Decrease old category count
+            const oldCat = await storage.getCategory(oldCategory);
+            if (oldCat && oldCat.activityCount > 0) {
+              oldCat.activityCount--;
+              oldCat.totalMinutes = Math.max(0, oldCat.totalMinutes - 30);
+              if (oldCat.activityCount === 0) {
+                await storage.deleteCategory(oldCategory);
+              } else {
+                await storage.addOrUpdateCategory(oldCat);
+              }
+            }
+
+            updated++;
+            console.log(
+              `✅ "${activity.text}" → ${oldCategory} → ${newCategory}`
+            );
+          }
+
+          // Small delay to avoid rate limiting
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } catch (err) {
+          console.error(`Failed to recategorize activity:`, err);
+          failed++;
+        }
+      }
+
+      console.log(
+        `✨ Recategorization complete! Updated: ${updated}, Failed: ${failed}`
+      );
+      alert(
+        `Recategorization complete!\n\nUpdated: ${updated}\nFailed: ${failed}\n\nPage will reload to reflect changes.`
+      );
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to recategorize:", err);
+      alert("Failed to recategorize activities");
+    } finally {
+      setIsRecategorizing(false);
+    }
+  };
+
   return (
     <div className="devOptions">
       <button onClick={runDatabaseTest} style={{ fontSize: "12px" }}>
         🧪 Test Database
+      </button>
+      <button
+        onClick={recategorizeActivities}
+        style={{
+          fontSize: "12px",
+          background: isRecategorizing ? "#6c757d" : "#4db59a",
+          color: "white",
+        }}
+        disabled={isRecategorizing}
+      >
+        {isRecategorizing ? "🔄 Recategorizing..." : "🏷️ Recategorize"}
       </button>
       <button
         onClick={clearAllData}

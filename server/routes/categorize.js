@@ -4,7 +4,7 @@ import { generateContent, isAIInitialized } from "../services/ai.js";
 import { CATEGORIZE_PROMPT } from "../prompts.js";
 
 export async function categorize(req, res) {
-  const { text, existingCategories = [] } = req.body;
+  const { text, existingCategories = [], forceRecategorize = false } = req.body;
 
   if (!text || typeof text !== "string" || text.trim().length === 0) {
     return res.status(400).json({ error: "Missing or invalid text field" });
@@ -16,10 +16,14 @@ export async function categorize(req, res) {
   }
 
   try {
-    const prompt = CATEGORIZE_PROMPT(text, existingCategories);
+    const prompt = CATEGORIZE_PROMPT(
+      text,
+      existingCategories,
+      forceRecategorize
+    );
 
     const responseText = await generateContent(prompt, {
-      temperature: 0.3,
+      temperature: forceRecategorize ? 0.5 : 0.3, // Higher temperature for recategorization
       maxOutputTokens: 50,
     });
 

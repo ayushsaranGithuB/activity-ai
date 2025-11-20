@@ -4,10 +4,24 @@ import type { Activity } from "../types";
 import "../css/activity.css";
 import { Filter, Search, Trash } from "lucide-react";
 
-export default function ActivityList() {
+interface ActivityListProps {
+  initialCategory?: string | null;
+  initialDateRange?: { start: number; end: number } | null;
+}
+
+export default function ActivityList({
+  initialCategory,
+  initialDateRange,
+}: ActivityListProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    initialCategory || "all"
+  );
+  const [dateRange, setDateRange] = useState<{
+    start: number;
+    end: number;
+  } | null>(initialDateRange || null);
   const [loading, setLoading] = useState(false);
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +29,9 @@ export default function ActivityList() {
 
   //   States for search and filter
   const [searchVisible, setSearchVisible] = useState(false);
-  const [filterVisible, setFilterVisible] = useState(false);
+  const [filterVisible, setFilterVisible] = useState(
+    !!initialCategory || !!initialDateRange
+  );
 
   // Initialize and load data
   useEffect(() => {
@@ -70,7 +86,12 @@ export default function ActivityList() {
     const matchesCategory =
       selectedCategory === "all" || activity.category === selectedCategory;
 
-    return matchesSearch && matchesCategory;
+    const matchesDateRange =
+      !dateRange ||
+      (activity.createdAt >= dateRange.start &&
+        activity.createdAt <= dateRange.end);
+
+    return matchesSearch && matchesCategory && matchesDateRange;
   });
 
   const formatDate = (timestamp: number) => {
@@ -125,6 +146,42 @@ export default function ActivityList() {
           <Filter size={16} />
         </button>
       </div>
+
+      {dateRange && (
+        <div
+          style={{
+            padding: "8px 10px",
+            background: "#e8f5f1",
+            borderRadius: "6px",
+            fontSize: "14px",
+            marginBottom: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span>
+            📅 Showing: {new Date(dateRange.start).toLocaleDateString()} -{" "}
+            {new Date(dateRange.end).toLocaleDateString()}
+          </span>
+          <button
+            onClick={() => {
+              setDateRange(null);
+              setSelectedCategory("all");
+            }}
+            style={{
+              padding: "4px 8px",
+              fontSize: "12px",
+              background: "#fff",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Clear Filters
+          </button>
+        </div>
+      )}
 
       <div className="filters">
         {searchVisible && (
