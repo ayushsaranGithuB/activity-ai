@@ -32,6 +32,7 @@ Guidelines:
 - Use a friendly, conversational tone
 - Don't be overly formal or robotic
 - Focus on what they accomplished, not just numbers
+- Add one helpful suggestion for next period based on their activities
 
 Period: ${period}
 Total Activities: ${totalActivities}
