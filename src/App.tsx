@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import Trends from "./components/Trends";
 import Input from "./components/Input";
 import ActivityList from "./components/ActivityList";
-import Header from "./components/Header";
 import Settings from "./components/Settings";
 import { Toaster } from "react-hot-toast";
+import Menu from "./components/Menu";
+import { MenuIcon } from "lucide-react";
 
 export default function App() {
   type ViewType = "home" | "input" | "trends" | "settings";
@@ -16,6 +17,7 @@ export default function App() {
     start: number;
     end: number;
   } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function switchView(newView: ViewType) {
     setView(newView);
@@ -37,7 +39,17 @@ export default function App() {
   return (
     <div className="app">
       <Toaster position="bottom-right" />
-      <Header changeView={switchView} />
+
+      <header className="topbar">
+        <button
+          className="hamburger-btn"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
+        >
+          <MenuIcon size={24} />
+        </button>
+        <h1 className="app-title">Activity AI</h1>
+      </header>
 
       <main className="content">
         {view === "home" && <Input resetKey={inputResetKey} />}
@@ -50,6 +62,12 @@ export default function App() {
         {view === "trends" && <Trends onCategoryClick={switchToActivityList} />}
         {view === "settings" && <Settings />}
       </main>
+
+      <Menu
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        changeView={switchView}
+      />
     </div>
   );
 }

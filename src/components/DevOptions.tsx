@@ -126,6 +126,7 @@ export default function DevOptions() {
                 name: newCategory,
                 totalMinutes: 30,
                 activityCount: 1,
+                createdAt: Date.now(),
                 lastUsedAt: Date.now(),
               });
             }
