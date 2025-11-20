@@ -57,3 +57,23 @@
     color: #856404;
     font-size: 14px;
 }
+
+.info-label {
+    font-weight: 600;
+    padding-right: 10px;
+    text-align: right;
+    vertical-align: top;
+    color: #717171;
+    text-shadow: 1px 1px 2px #ffffffaa;
+    letter-spacing: 0.6px;
+    font-size: 20px;
+    line-height: 32px;
+}
+
+.info-value {
+    text-align: left;
+    vertical-align: top;
+    color: #888888;
+    line-height: 32px;
+    font-size: 24px;
+}

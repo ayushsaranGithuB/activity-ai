@@ -3,13 +3,13 @@ import Trends from "./components/Trends";
 import Input from "./components/Input";
 import ActivityList from "./components/ActivityList";
 import Settings from "./components/Settings";
+import Info from "./components/Info";
 import { Toaster } from "react-hot-toast";
 import Menu from "./components/Menu";
-import { MenuIcon } from "lucide-react";
+import { CircleDotDashed, MenuIcon } from "lucide-react";
+import { ViewType } from "./types/views";
 
 export default function App() {
-  type ViewType = "home" | "input" | "trends" | "settings";
-
   const [view, setView] = useState<ViewType>("home");
   const [inputResetKey, setInputResetKey] = useState(0);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
@@ -41,14 +41,17 @@ export default function App() {
       <Toaster position="bottom-right" />
 
       <header className="topbar">
+        <div className="header-logo">
+          <CircleDotDashed size={24} color="rgba(85, 198, 169, 1)" /> Activity
+          AI
+        </div>
         <button
           className="hamburger-btn"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => setMenuOpen(true)}
           aria-label="Toggle menu"
         >
-          <MenuIcon size={24} />
+          <MenuIcon size={24} color="rgba(85, 198, 169, 1)" />
         </button>
-        <h1 className="app-title">Activity AI</h1>
       </header>
 
       <main className="content">
@@ -61,6 +64,7 @@ export default function App() {
         )}
         {view === "trends" && <Trends onCategoryClick={switchToActivityList} />}
         {view === "settings" && <Settings />}
+        {view === "info" && <Info />}
       </main>
 
       <Menu
