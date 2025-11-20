@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
 import { getBroadCategoryForSubcategory } from "../lib/broad-categories";
-import { CircleDotDashed, Send } from "lucide-react";
+import { CircleDotDashed, Send, RotateCcw } from "lucide-react";
 import type { ConversationMessage } from "../types";
 import toast from "react-hot-toast";
 
@@ -164,6 +164,14 @@ export default function Input({ resetKey }: InputProps) {
       }
     } catch (e) {
       console.error("Error in conversation:", e);
+      // Mark the last user message as failed
+      setConversationHistory((prev) =>
+        prev.map((msg, idx) =>
+          idx === prev.length - 1 && msg.role === "user"
+            ? { ...msg, error: true }
+            : msg
+        )
+      );
       setError(
         "Failed to process message. Make sure the server is running on port 3000."
       );
@@ -288,6 +296,14 @@ export default function Input({ resetKey }: InputProps) {
           }
         } catch (e) {
           console.error("Error in conversation:", e);
+          // Mark the last user message as failed
+          setConversationHistory((prev) =>
+            prev.map((msg, idx) =>
+              idx === prev.length - 1 && msg.role === "user"
+                ? { ...msg, error: true }
+                : msg
+            )
+          );
           setError(
             "Failed to process message. Make sure the server is running on port 3000."
           );
@@ -295,6 +311,119 @@ export default function Input({ resetKey }: InputProps) {
           setIsWaitingForResponse(false);
         }
       })();
+    }
+  };
+
+  const handleRetry = async (messageIndex: number) => {
+    const failedMessage = conversationHistory[messageIndex];
+    if (!failedMessage || failedMessage.role !== "user" || !failedMessage.error)
+      return;
+
+    // Remove error flag and retry
+    const updatedHistory = conversationHistory.map((msg, idx) =>
+      idx === messageIndex ? { ...msg, error: false } : msg
+    );
+    setConversationHistory(updatedHistory);
+    setIsWaitingForResponse(true);
+    setError(null);
+
+    try {
+      const historyBeforeRetry = updatedHistory.slice(0, messageIndex);
+      const res = await fetch("/api/conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userMessage: failedMessage.content,
+          conversationHistory: historyBeforeRetry.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          existingCategories,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server responded with status ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      const assistantMessage: ConversationMessage = {
+        role: "assistant",
+        content: data.assistantMessage,
+        timestamp: Date.now(),
+      };
+
+      // Remove any messages after the retried message and add the new response
+      setConversationHistory([
+        ...updatedHistory.slice(0, messageIndex + 1),
+        assistantMessage,
+      ]);
+
+      if (data.quickOptions && Array.isArray(data.quickOptions)) {
+        setQuickOptions(data.quickOptions);
+      } else {
+        setQuickOptions([]);
+      }
+
+      if (data.readyToSave && data.activityToSave) {
+        setSaving(true);
+
+        const {
+          text: activityText,
+          category,
+          broadCategory,
+        } = data.activityToSave;
+
+        await storage.addActivity({
+          text: activityText,
+          category,
+          createdAt: Date.now(),
+        });
+
+        const existingCategory = await storage.getCategory(category);
+        if (existingCategory) {
+          existingCategory.activityCount++;
+          existingCategory.totalMinutes += 30;
+          existingCategory.lastUsedAt = Date.now();
+          if (!existingCategory.broadCategory) {
+            existingCategory.broadCategory =
+              broadCategory || getBroadCategoryForSubcategory(category);
+          }
+          await storage.addOrUpdateCategory(existingCategory);
+        } else {
+          await storage.addOrUpdateCategory({
+            name: category,
+            broadCategory:
+              broadCategory || getBroadCategoryForSubcategory(category),
+            isBroadCategory: false,
+            activityCount: 1,
+            totalMinutes: 30,
+            createdAt: Date.now(),
+            lastUsedAt: Date.now(),
+          });
+        }
+
+        toast.success(`Saved: ${activityText}`);
+
+        const categories = await storage.getCategoryNames();
+        setExistingCategories(categories);
+
+        setSaving(false);
+        setQuickOptions([]);
+      }
+    } catch (e) {
+      console.error("Error retrying message:", e);
+      setConversationHistory((prev) =>
+        prev.map((msg, idx) =>
+          idx === messageIndex ? { ...msg, error: true } : msg
+        )
+      );
+      setError(
+        "Failed to process message. Make sure the server is running on port 3000."
+      );
+    } finally {
+      setIsWaitingForResponse(false);
     }
   };
 
@@ -319,11 +448,21 @@ export default function Input({ resetKey }: InputProps) {
             {conversationHistory.map((msg, idx) => (
               <div
                 key={idx}
-                className={
+                className={`${
                   msg.role === "user" ? "user-message" : "assistant-message"
-                }
+                } ${msg.error ? "message-error" : ""}`}
               >
-                {msg.content}
+                <span className="message-content">{msg.content}</span>
+                {msg.error && msg.role === "user" && (
+                  <button
+                    className="retry-btn"
+                    onClick={() => handleRetry(idx)}
+                    disabled={isWaitingForResponse || saving}
+                    title="Retry message"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                )}
               </div>
             ))}
           </div>

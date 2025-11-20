@@ -8,12 +8,38 @@
     flex-direction: column;
 }
 
-.trends .activity-header button.active {
-    background: linear-gradient(145deg, rgb(159 233 214), rgb(76 181 154));
+.period-selector,
+.slide-selector {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #CCC;
+    background-color: #b8b8b8;
+    border-radius: 24px;
+    padding: 4px 6px;
+}
+
+.trends .period-selector button,
+.trends .slide-selector button {
+    padding: 8px 20px;
+    border: none;
+    background: none;
+    color: #fff;
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    box-shadow: none;
+}
+
+.trends .activity-header button.active,
+.trends .period-selector button.active,
+.trends .slide-selector button.active {
+    background: linear-gradient(145deg, rgb(255, 255, 255), rgb(198, 198, 198));
     color: #1a5a4a;
     font-weight: 600;
-    box-shadow: inset var(--distance) var(--distance) calc(var(--distance) * 2) #4db59a,
-        inset calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 2) #5fc9ae;
 }
 
 .trend-item {

@@ -186,33 +186,35 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
     <div className="trends">
       <div className="activity-header">
         <h2>Trends</h2>
-        <button
-          onClick={() => {
-            setPeriod("week");
-            setPeriodOffset(0);
-          }}
-          className={period === "week" ? "active" : ""}
-        >
-          Week
-        </button>
-        <button
-          onClick={() => {
-            setPeriod("month");
-            setPeriodOffset(0);
-          }}
-          className={period === "month" ? "active" : ""}
-        >
-          Month
-        </button>
-        <button
-          onClick={() => {
-            setPeriod("year");
-            setPeriodOffset(0);
-          }}
-          className={period === "year" ? "active" : ""}
-        >
-          Year
-        </button>
+        <div className="period-selector">
+          <button
+            onClick={() => {
+              setPeriod("week");
+              setPeriodOffset(0);
+            }}
+            className={period === "week" ? "active" : ""}
+          >
+            Week
+          </button>
+          <button
+            onClick={() => {
+              setPeriod("month");
+              setPeriodOffset(0);
+            }}
+            className={period === "month" ? "active" : ""}
+          >
+            Month
+          </button>
+          <button
+            onClick={() => {
+              setPeriod("year");
+              setPeriodOffset(0);
+            }}
+            className={period === "year" ? "active" : ""}
+          >
+            Year
+          </button>
+        </div>
       </div>
 
       <div className="trends-timeline-nav">
@@ -238,22 +240,10 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
         </div>
       )}
 
-      {period === "week" && sortedBroadCategories.length > 0 && (
+      <h3>Here is a breakdown of your activities by category:</h3>
+
+      {sortedBroadCategories.length > 0 && (
         <>
-          <div className="chart-type-selector">
-            <button
-              onClick={() => setChartType("pie")}
-              className={chartType === "pie" ? "active" : ""}
-            >
-              Pie Chart
-            </button>
-            <button
-              onClick={() => setChartType("bar")}
-              className={chartType === "bar" ? "active" : ""}
-            >
-              Bar Chart
-            </button>
-          </div>
           {chartType === "pie" ? (
             <PieChart
               trends={sortedBroadCategories.map(([broadCategory, group]) => ({
@@ -275,6 +265,20 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
               onCategoryClick={(broad) => toggleBroadCategory(broad)}
             />
           )}
+          <div className="chart-type-selector slide-selector">
+            <button
+              onClick={() => setChartType("pie")}
+              className={chartType === "pie" ? "active" : ""}
+            >
+              Pie Chart
+            </button>
+            <button
+              onClick={() => setChartType("bar")}
+              className={chartType === "bar" ? "active" : ""}
+            >
+              Bar Chart
+            </button>
+          </div>
         </>
       )}
       <div className="trend-summary">

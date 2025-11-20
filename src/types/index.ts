@@ -203,6 +203,7 @@ export interface ConversationMessage {
     role: "user" | "assistant";
     content: string;
     timestamp: number;
+    error?: boolean;
 }
 
 export interface ConversationState {
