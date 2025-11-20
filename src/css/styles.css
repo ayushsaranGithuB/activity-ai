@@ -437,10 +437,12 @@ h2.system-prompt {
 /* Quick Options */
 .quick-options {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
-    gap: 0.5em;
+    gap: 0.75em;
     margin-bottom: 1em;
     justify-content: center;
+    padding: 8px;
 }
 
 .quick-option-btn {
