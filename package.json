@@ -31,7 +31,8 @@
     "react": "^19.2.0",
     "react-aria-components": "^1.13.0",
     "react-dom": "^19.2.0",
-    "react-hot-toast": "^2.6.0"
+    "react-hot-toast": "^2.6.0",
+    "recharts": "^3.4.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.4",

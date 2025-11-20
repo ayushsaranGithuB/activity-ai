@@ -62,3 +62,38 @@ export async function generateContent(
 export function isAIInitialized(): boolean {
     return genAI !== null;
 }
+
+export async function generateAISummary(
+    prompt: string,
+    config: GenerateContentConfig = {}
+): Promise<string> {
+    if (!genAI) {
+        throw new Error("AI not initialized. Call initializeAI() first.");
+    }
+
+    const defaultConfig = {
+        model: "gemini-2.5-flash-lite",
+        contents: prompt,
+        config: {
+            temperature: 0.8,
+            maxOutputTokens: 200,
+            responseMimeType: "text/plain",
+            ...config,
+        },
+    };
+
+    console.log("🤖 Gemini API Request (Summary):", {
+        model: defaultConfig.model,
+        temperature: defaultConfig.config.temperature,
+        maxOutputTokens: defaultConfig.config.maxOutputTokens,
+    });
+
+    const result = await genAI.models.generateContent(defaultConfig);
+    const text = result.text || "";
+
+    console.log("✅ Gemini API Response (Summary):", {
+        responseLength: text.length,
+    });
+
+    return text;
+}

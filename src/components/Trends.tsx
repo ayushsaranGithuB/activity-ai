@@ -3,236 +3,10 @@ import { storage } from "../lib/storage";
 import type { BroadCategory } from "../types";
 import { calculateCategoryTrends } from "../lib/trends";
 import type { Activity, CategoryTrend } from "../types";
+import { getOffsetPeriodRange, formatPeriodLabel } from "../lib/date-utils";
+import PieChart from "./charts/PieChart";
+import BarChart from "./charts/BarChart";
 import "../css/trends.css";
-
-// Helper function to get period range with offset
-function getOffsetPeriodRange(
-  period: "week" | "month" | "year",
-  offset: number
-): { start: number; end: number } {
-  const now = new Date();
-  let start: Date;
-  let end: Date;
-
-  if (period === "week") {
-    // Week starts on Sunday
-    const dayOfWeek = now.getDay();
-    start = new Date(now);
-    start.setDate(now.getDate() - dayOfWeek + offset * 7);
-    start.setHours(0, 0, 0, 0);
-
-    end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
-  } else if (period === "month") {
-    start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-    start.setHours(0, 0, 0, 0);
-
-    end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
-    end.setHours(23, 59, 59, 999);
-  } else {
-    // year
-    start = new Date(now.getFullYear() + offset, 0, 1);
-    start.setHours(0, 0, 0, 0);
-
-    end = new Date(now.getFullYear() + offset, 11, 31);
-    end.setHours(23, 59, 59, 999);
-  }
-
-  return {
-    start: start.getTime(),
-    end: end.getTime(),
-  };
-}
-
-// Helper function to format date range label
-function formatPeriodLabel(
-  period: "week" | "month" | "year",
-  offset: number
-): string {
-  const range = getOffsetPeriodRange(period, offset);
-  const start = new Date(range.start);
-  const end = new Date(range.end);
-
-  if (offset === 0) {
-    if (period === "week") return "This Week";
-    if (period === "month") return "This Month";
-    if (period === "year") return "This Year";
-  }
-
-  if (period === "week") {
-    const monthStart = start.toLocaleDateString("en-US", { month: "short" });
-    const monthEnd = end.toLocaleDateString("en-US", { month: "short" });
-    const dateStart = start.getDate();
-    const dateEnd = end.getDate();
-
-    if (monthStart === monthEnd) {
-      return `${monthStart} ${dateStart}-${dateEnd}`;
-    } else {
-      return `${monthStart} ${dateStart} - ${monthEnd} ${dateEnd}`;
-    }
-  } else if (period === "month") {
-    return start.toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-  } else {
-    return start.getFullYear().toString();
-  }
-}
-
-const BarChart = ({
-  trends,
-  onCategoryClick,
-}: {
-  trends: CategoryTrend[];
-  onCategoryClick?: (category: string) => void;
-}) => {
-  const colors = [
-    "#4db59a",
-    "#7ecfc0",
-    "#9bddd2",
-    "#b9e7e4",
-    "#ffa726",
-    "#66bb6a",
-    "#ab47bc",
-    "#ec407a",
-    "#5c6bc0",
-  ];
-
-  const total = trends.reduce((sum, trend) => sum + trend.activityCount, 0);
-  if (total === 0) return null;
-
-  const maxCount = Math.max(...trends.map((t) => t.activityCount));
-
-  return (
-    <div className="trends-bar-chart">
-      <div className="bar-chart-container">
-        {trends.map((trend, index) => {
-          const percentage = (trend.activityCount / total) * 100;
-          // Use flex-grow to proportionally scale bars
-          const flexGrow = trend.activityCount;
-          return (
-            <div
-              key={index}
-              className={`bar-item ${!onCategoryClick ? "non-clickable" : ""}`}
-              onClick={() => onCategoryClick?.(trend.category)}
-            >
-              <div
-                className="bar"
-                style={{
-                  flexGrow: flexGrow,
-                  background: colors[index % colors.length],
-                }}
-              >
-                <span className="bar-value">{trend.activityCount}</span>
-              </div>
-              <div className="bar-label">
-                <span className="bar-category">{trend.category}</span>
-                <span className="bar-percentage">
-                  {Math.round(percentage)}%
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const PieChart = ({
-  trends,
-  onCategoryClick,
-}: {
-  trends: CategoryTrend[];
-  onCategoryClick?: (category: string) => void;
-}) => {
-  const colors = [
-    "#4db59a",
-    "#12aedeff",
-    "#b97dd3ff",
-    "#9bddd2",
-    "#b9e7e4",
-    "#ffa726",
-    "#66bb6a",
-    "#ab47bc",
-    "#ec407a",
-    "#5c6bc0",
-  ];
-
-  const total = trends.reduce((sum, trend) => sum + trend.activityCount, 0);
-  if (total === 0) return null;
-
-  const paths = trends.reduce(
-    (acc, trend, index) => {
-      const percentage = (trend.activityCount / total) * 100;
-      const angle = (percentage / 100) * 360;
-
-      const startX = 50 + 40 * Math.cos((acc.currentAngle * Math.PI) / 180);
-      const startY = 50 + 40 * Math.sin((acc.currentAngle * Math.PI) / 180);
-
-      const newAngle = acc.currentAngle + angle;
-
-      const endX = 50 + 40 * Math.cos((newAngle * Math.PI) / 180);
-      const endY = 50 + 40 * Math.sin((newAngle * Math.PI) / 180);
-
-      const largeArc = angle > 180 ? 1 : 0;
-
-      const path = `M 50,50 L ${startX},${startY} A 40,40 0 ${largeArc},1 ${endX},${endY} Z`;
-
-      acc.paths.push({
-        path,
-        color: colors[index % colors.length],
-        category: trend.category,
-        percentage: Math.round(percentage),
-      });
-
-      acc.currentAngle = newAngle;
-
-      return acc;
-    },
-    {
-      paths: [] as Array<{
-        path: string;
-        color: string;
-        category: string;
-        percentage: number;
-      }>,
-      currentAngle: -90,
-    }
-  ).paths;
-
-  return (
-    <div className="trends-pie-chart">
-      <svg width="300" height="300" viewBox="0 0 100 100">
-        {paths.map((item, index) => (
-          <path
-            key={index}
-            d={item.path}
-            fill={item.color}
-            stroke="#fff"
-            strokeWidth="0.5"
-          />
-        ))}
-      </svg>
-      <div className="legend-color-box">
-        {paths.map((item, index) => (
-          <div
-            className={`legend-item ${!onCategoryClick ? "non-clickable" : ""}`}
-            key={index}
-            onClick={() => onCategoryClick?.(item.category)}
-          >
-            <div className="legend-color" style={{ background: item.color }} />
-            <span>
-              {item.category} ({item.percentage}%)
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 interface TrendsProps {
   onCategoryClick?: (
@@ -249,6 +23,8 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
   const [expandedBroad, setExpandedBroad] = useState<Set<string>>(new Set());
   const [periodOffset, setPeriodOffset] = useState(0); // 0 = current, -1 = previous, 1 = next
   const [chartType, setChartType] = useState<"pie" | "bar">("pie");
+  const [aiSummary, setAiSummary] = useState<string>("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -294,10 +70,53 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
       });
 
       setTrends(enrichedTrends);
+
+      // Generate AI summary if we have activities in this period
+      if (filteredActivities.length > 0) {
+        generateAISummary(filteredActivities, enrichedTrends);
+      } else {
+        setAiSummary("");
+      }
     } catch (err) {
       console.error("Failed to load trends:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateAISummary = async (
+    filteredActivities: Activity[],
+    enrichedTrends: CategoryTrend[]
+  ) => {
+    setSummaryLoading(true);
+    try {
+      const response = await fetch("/api/trends-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          period,
+          trends: enrichedTrends.map((t) => ({
+            category: t.category,
+            activityCount: t.activityCount,
+            totalMinutes: t.totalMinutes,
+          })),
+          totalActivities: filteredActivities.length,
+          activities: filteredActivities.map((a) => ({
+            text: a.text,
+            category: a.category,
+            createdAt: a.createdAt,
+          })),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiSummary(data.summary);
+      }
+    } catch (error) {
+      console.error("Failed to generate AI summary:", error);
+    } finally {
+      setSummaryLoading(false);
     }
   };
 
@@ -406,6 +225,18 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
           →
         </button>
       </div>
+
+      {/* Trends AI Summary */}
+      {aiSummary && (
+        <div className="ai-summary">
+          <p>{aiSummary}</p>
+        </div>
+      )}
+      {summaryLoading && (
+        <div className="ai-summary loading">
+          <p>Generating insights...</p>
+        </div>
+      )}
 
       {period === "week" && sortedBroadCategories.length > 0 && (
         <>

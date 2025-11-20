@@ -6,6 +6,7 @@ import { insights } from "./insights.js";
 import { mergeCategories } from "./merge-categories.js";
 import { conversation } from "./conversation.js";
 import { health } from "./health.js";
+import { trendsSummary } from "./trends-summary.js";
 
 export default async function routes(
     fastify: FastifyInstance,
@@ -15,5 +16,6 @@ export default async function routes(
     fastify.post("/insights", insights);
     fastify.post("/merge-categories", mergeCategories);
     fastify.post("/conversation", conversation);
+    fastify.post("/trends-summary", trendsSummary);
     fastify.get("/health", health);
 }
