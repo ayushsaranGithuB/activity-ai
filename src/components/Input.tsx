@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
+import { getBroadCategoryForSubcategory } from "../lib/broad-categories";
 import { CircleDotDashed, Send } from "lucide-react";
 import type { ConversationMessage } from "../types";
 import toast from "react-hot-toast";
@@ -113,7 +114,11 @@ export default function Input({ resetKey }: InputProps) {
       if (data.readyToSave && data.activityToSave) {
         setSaving(true);
 
-        const { text: activityText, category } = data.activityToSave;
+        const {
+          text: activityText,
+          category,
+          broadCategory,
+        } = data.activityToSave;
 
         // Save to IndexedDB
         const activity = await storage.addActivity({
@@ -122,16 +127,24 @@ export default function Input({ resetKey }: InputProps) {
           createdAt: Date.now(),
         });
 
-        // Update or create category
+        // Update or create category with broad category
         const existingCategory = await storage.getCategory(category);
         if (existingCategory) {
           existingCategory.activityCount++;
           existingCategory.totalMinutes += 30; // Default 30 min
           existingCategory.lastUsedAt = Date.now();
+          // Ensure broad category is set
+          if (!existingCategory.broadCategory) {
+            existingCategory.broadCategory =
+              broadCategory || getBroadCategoryForSubcategory(category);
+          }
           await storage.addOrUpdateCategory(existingCategory);
         } else {
           await storage.addOrUpdateCategory({
             name: category,
+            broadCategory:
+              broadCategory || getBroadCategoryForSubcategory(category),
+            isBroadCategory: false,
             activityCount: 1,
             totalMinutes: 30,
             createdAt: Date.now(),
@@ -227,7 +240,11 @@ export default function Input({ resetKey }: InputProps) {
           if (data.readyToSave && data.activityToSave) {
             setSaving(true);
 
-            const { text: activityText, category } = data.activityToSave;
+            const {
+              text: activityText,
+              category,
+              broadCategory,
+            } = data.activityToSave;
 
             // Save to IndexedDB
             await storage.addActivity({
@@ -236,16 +253,24 @@ export default function Input({ resetKey }: InputProps) {
               createdAt: Date.now(),
             });
 
-            // Update or create category
+            // Update or create category with broad category
             const existingCategory = await storage.getCategory(category);
             if (existingCategory) {
               existingCategory.activityCount++;
               existingCategory.totalMinutes += 30;
               existingCategory.lastUsedAt = Date.now();
+              // Ensure broad category is set
+              if (!existingCategory.broadCategory) {
+                existingCategory.broadCategory =
+                  broadCategory || getBroadCategoryForSubcategory(category);
+              }
               await storage.addOrUpdateCategory(existingCategory);
             } else {
               await storage.addOrUpdateCategory({
                 name: category,
+                broadCategory:
+                  broadCategory || getBroadCategoryForSubcategory(category),
+                isBroadCategory: false,
                 activityCount: 1,
                 totalMinutes: 30,
                 createdAt: Date.now(),

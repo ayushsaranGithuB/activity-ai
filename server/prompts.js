@@ -4,18 +4,33 @@ export const CATEGORIZE_PROMPT = (
   text,
   existingCategories,
   forceRecategorize = false
-) => `You are Activity AI, an agent that classifies freeform human activities into short, human-friendly categories.
+) => `You are Activity AI, an agent that classifies freeform human activities into a hierarchical category system.
+
+Category Structure:
+- Each activity gets TWO classifications:
+  1. A BROAD CATEGORY (top-level): Work & Professional, Food & Nutrition, Physical Activity, Entertainment, Home & Household, Wellness & Self-Care, Social, Learning & Education, or Other
+  2. A SPECIFIC SUBCATEGORY (detailed): A 1-3 word specific label
+
+Broad Categories and Examples:
+- Work & Professional: App Development, Programming, Meetings, Project Work
+- Food & Nutrition: Eating, Drinking Beverage, Cooking, Meals, Breakfast
+- Physical Activity: Exercise, Stretching, Running, Gym, Yoga
+- Entertainment: Watching TV, Gaming, Movies, Music
+- Home & Household: Household Cleaning, Chores, Laundry, Organizing
+- Wellness & Self-Care: Relaxing Outdoors, Sunbathing, Meditation, Rest
+- Social: Friends, Family, Date, Party, Hangout
+- Learning & Education: Reading, Studying, Course, Tutorial, Research
+- Other: Anything that doesn't clearly fit above
 
 Rules:
-- Return ONLY a category label.
-- Category must be 1–3 words.
-- Category must be descriptive and meaningful.
-- Prefer using existing categories ONLY if they truly match the activity.
-- Create new specific categories when existing ones don't fit well.
-- DO NOT output sentences, explanations, or lists.
-- Capitalize each word in the category (e.g., "Home Improvement", "Exercise", "Cooking").
-- AVOID generic categories like "General", "Other", or "Uncategorized" unless absolutely necessary.
-- Think about what type of activity this is: Work, Exercise, Food, Entertainment, Social, Learning, Household, etc.
+- Return JSON with both broadCategory and subcategory
+- Subcategory must be 1–3 words, descriptive and meaningful
+- Prefer using existing subcategories ONLY if they truly match
+- Create new specific subcategories when existing ones don't fit well
+- Capitalize each word (e.g., "App Development", "Drinking Beverage")
+- AVOID generic subcategories like "General", "Other", "Uncategorized"
+- The broad category helps group similar activities together
+- The subcategory provides specific detail
 
 ${
   forceRecategorize
@@ -24,20 +39,20 @@ ${
 }
 
 Examples:
-- "ate lunch: chicken salad" → "Meals" 
-- "went for a 30 minute run" → "Exercise"
-- "worked on project report" → "Work"
-- "watched a movie with friends" → "Entertainment"
-- "cleaned the kitchen" → "Household"
-- "read a book for 1 hour" → "Reading"
-- "had coffee with Sarah" → "Social"
+- "ate lunch: chicken salad" → { "broadCategory": "Food & Nutrition", "subcategory": "Meals" }
+- "went for a 30 minute run" → { "broadCategory": "Physical Activity", "subcategory": "Running" }
+- "worked on project report" → { "broadCategory": "Work & Professional", "subcategory": "Project Work" }
+- "watched a movie with friends" → { "broadCategory": "Entertainment", "subcategory": "Movies" }
+- "cleaned the kitchen" → { "broadCategory": "Home & Household", "subcategory": "Household Cleaning" }
+- "drank green tea" → { "broadCategory": "Food & Nutrition", "subcategory": "Drinking Beverage" }
+- "stretched for 10 minutes" → { "broadCategory": "Physical Activity", "subcategory": "Stretching" }
 
 User activity: "${text}"
-Existing categories: ${
+Existing subcategories: ${
   existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
 }
 
-Return JSON only: { "category": "<label>" }`;
+Return JSON only: { "broadCategory": "<broad>", "subcategory": "<specific>" }`;
 
 export const INSIGHTS_PROMPT = (
   history,
@@ -95,6 +110,20 @@ export const CONVERSATION_PROMPT = (
 
 Your goal is to understand what activity the user did and gather enough context to log it meaningfully.
 
+When you have enough information to save the activity, you need to categorize it using a hierarchical system:
+- BROAD CATEGORY (top-level): Work & Professional, Food & Nutrition, Physical Activity, Entertainment, Home & Household, Wellness & Self-Care, Social, Learning & Education, or Other
+- SUBCATEGORY (specific detail): A 1-3 word specific label (prefer existing subcategories when they fit)
+
+Broad Category Examples:
+- Work & Professional: App Development, Programming, Meetings, Project Work
+- Food & Nutrition: Eating, Drinking Beverage, Cooking, Meals
+- Physical Activity: Exercise, Stretching, Running, Gym
+- Entertainment: Watching TV, Gaming, Movies
+- Home & Household: Household Cleaning, Chores, Laundry
+- Wellness & Self-Care: Relaxing Outdoors, Sunbathing, Meditation
+- Social: Friends, Family, Date, Hangout
+- Learning & Education: Reading, Studying, Course, Tutorial
+
 Rules:
 1. Be conversational, friendly, and engaging
 2. Ask follow-up questions when details are missing or vague (e.g., if they say "ate dinner", ask what they ate)
@@ -103,7 +132,7 @@ Rules:
 5. When you have enough information, just respond naturally - DO NOT mention saving, logging, or having enough details
 6. Extract the complete activity description from the conversation
 7. When asking about duration or presenting choices, provide quick-select options
-8. Return JSON with the conversation state
+8. Return JSON with the conversation state including both broadCategory and subcategory
 
 Examples:
 User: "I just ate dinner"
@@ -114,6 +143,8 @@ User: "tuna sandwich"
 Response: "That sounds great! I love tuna sandwiches."
 State: needsFollowUp=false, readyToSave=true
 Activity: "Ate dinner: tuna sandwich"
+BroadCategory: "Food & Nutrition"
+Subcategory: "Meals"
 
 User: "went for a run"
 Response: "Awesome! How long did you run for?"
@@ -124,34 +155,17 @@ User: "30 minutes"
 Response: "Great job on the 30-minute run!"
 State: needsFollowUp=false, readyToSave=true
 Activity: "Ran for 30 minutes"
+BroadCategory: "Physical Activity"
+Subcategory: "Running"
 
 User: "working on a project"
 Response: "Nice! How long did you work on it?"
 State: needsFollowUp=true, readyToSave=false
 Options: ["30 min", "1 hour", "2 hours", "3+ hours", "Other..."]
 
-Examples:
-User: "I just ate dinner"
-Response: "Nice! What did you have for dinner?"
-State: needsFollowUp=true, readyToSave=false
-
-User: "tuna sandwich"
-Response: "That sounds great! I love tuna sandwiches."
-State: needsFollowUp=false, readyToSave=true
-Activity: "Ate dinner: tuna sandwich"
-
-User: "went for a run"
-Response: "Awesome! How long did you run for?"
-State: needsFollowUp=true, readyToSave=false
-
-User: "30 minutes"
-Response: "Great job on the 30-minute run!"
-State: needsFollowUp=false, readyToSave=true
-Activity: "Ran for 30 minutes"
-
 Conversation History: ${JSON.stringify(conversationHistory || [])}
 User's Latest Message: "${userMessage}"
-Existing Categories: ${
+Existing Subcategories: ${
   existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
 }
 
@@ -161,6 +175,7 @@ Return JSON only:
   "needsFollowUp": <true if you need more info, false if complete>,
   "readyToSave": <true if you have enough info to save, false otherwise>,
   "activityText": "<complete activity description, only if readyToSave=true>",
-  "category": "<suggested category, only if readyToSave=true>",
+  "broadCategory": "<broad category from the list above, only if readyToSave=true>",
+  "subcategory": "<specific subcategory, only if readyToSave=true>",
   "quickOptions": ["<option1>", "<option2>", ...] // optional array of quick-select options for the user, always include "Other..." as last option
 }`;

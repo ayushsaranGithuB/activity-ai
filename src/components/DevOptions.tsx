@@ -1,9 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
 import { testDatabase } from "../test-db";
+import CategoryEvaluation from "./CategoryEvaluation";
+import CategoryMigration from "./CategoryMigration";
 
 export default function DevOptions() {
   const [isRecategorizing, setIsRecategorizing] = useState(false);
+  const [showEvaluation, setShowEvaluation] = useState(false);
+  const [showMigration, setShowMigration] = useState(false);
+
+  useEffect(() => {
+    console.log(
+      "🔄 DevOptions: showMigration state changed to:",
+      showMigration
+    );
+  }, [showMigration]);
+
+  useEffect(() => {
+    console.log(
+      "📊 DevOptions: showEvaluation state changed to:",
+      showEvaluation
+    );
+  }, [showEvaluation]);
 
   const runDatabaseTest = async () => {
     console.clear();
@@ -154,27 +172,131 @@ export default function DevOptions() {
   };
 
   return (
-    <div className="devOptions">
-      <button onClick={runDatabaseTest} style={{ fontSize: "12px" }}>
-        🧪 Test Database
-      </button>
-      <button
-        onClick={recategorizeActivities}
-        style={{
-          fontSize: "12px",
-          background: isRecategorizing ? "#6c757d" : "#4db59a",
-          color: "white",
-        }}
-        disabled={isRecategorizing}
-      >
-        {isRecategorizing ? "🔄 Recategorizing..." : "🏷️ Recategorize"}
-      </button>
-      <button
-        onClick={clearAllData}
-        style={{ fontSize: "12px", background: "#dc3545", color: "white" }}
-      >
-        🗑️ Clear All Data
-      </button>
-    </div>
+    <>
+      <div className="devOptions">
+        <button onClick={runDatabaseTest} style={{ fontSize: "12px" }}>
+          🧪 Test Database
+        </button>
+        <button
+          onClick={() => setShowEvaluation(!showEvaluation)}
+          style={{
+            fontSize: "12px",
+            background: showEvaluation ? "#6c757d" : "#17a2b8",
+            color: "white",
+          }}
+        >
+          {showEvaluation ? "✖ Close Evaluation" : "📊 Evaluate Categories"}
+        </button>
+        <button
+          onClick={() => {
+            console.log(
+              "🔄 DevOptions: Migration button clicked. Current state:",
+              showMigration
+            );
+            console.log(
+              "🔄 DevOptions: Toggling showMigration to:",
+              !showMigration
+            );
+            setShowMigration(!showMigration);
+          }}
+          style={{
+            fontSize: "12px",
+            background: showMigration ? "#6c757d" : "#28a745",
+            color: "white",
+          }}
+        >
+          {showMigration
+            ? "✖ Close Migration"
+            : "🔄 Migrate to Broad Categories"}
+        </button>
+        <button
+          onClick={recategorizeActivities}
+          style={{
+            fontSize: "12px",
+            background: isRecategorizing ? "#6c757d" : "#4db59a",
+            color: "white",
+          }}
+          disabled={isRecategorizing}
+        >
+          {isRecategorizing ? "🔄 Recategorizing..." : "🏷️ Recategorize"}
+        </button>
+        <button
+          onClick={clearAllData}
+          style={{ fontSize: "12px", background: "#dc3545", color: "white" }}
+        >
+          🗑️ Clear All Data
+        </button>
+      </div>
+
+      {showEvaluation && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            zIndex: 9999,
+            overflow: "auto",
+            padding: "20px",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowEvaluation(false);
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              maxWidth: "1200px",
+              margin: "0 auto",
+              borderRadius: "8px",
+            }}
+          >
+            <CategoryEvaluation />
+          </div>
+        </div>
+      )}
+
+      {showMigration && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            zIndex: 9999,
+            overflow: "auto",
+            padding: "20px",
+          }}
+          onClick={(e) => {
+            console.log("🔄 DevOptions: Migration modal background clicked");
+            if (e.target === e.currentTarget) {
+              console.log(
+                "🔄 DevOptions: Closing migration modal (clicked outside)"
+              );
+              setShowMigration(false);
+            }
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              maxWidth: "1200px",
+              margin: "0 auto",
+              borderRadius: "8px",
+            }}
+            onClick={(e) => {
+              console.log("🔄 DevOptions: Migration modal content clicked");
+              e.stopPropagation();
+            }}
+          >
+            <CategoryMigration />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

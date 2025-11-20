@@ -12,7 +12,10 @@ export async function categorize(req, res) {
 
   if (!isAIInitialized()) {
     console.error("GEMINI_API_KEY not configured");
-    return res.json({ category: "Uncategorized" });
+    return res.json({
+      category: "Uncategorized",
+      broadCategory: "Other",
+    });
   }
 
   try {
@@ -24,15 +27,23 @@ export async function categorize(req, res) {
 
     const responseText = await generateContent(prompt, {
       temperature: forceRecategorize ? 0.5 : 0.3, // Higher temperature for recategorization
-      maxOutputTokens: 50,
+      maxOutputTokens: 100,
     });
 
     const parsed = JSON.parse(responseText);
-    const category = parsed.category || "Uncategorized";
+    const category = parsed.subcategory || parsed.category || "Uncategorized";
+    const broadCategory = parsed.broadCategory || "Other";
 
-    res.json({ category });
+    res.json({
+      category,
+      broadCategory,
+      subcategory: category, // For backwards compatibility
+    });
   } catch (err) {
     console.error("Error in /api/categorize:", err);
-    res.json({ category: "Uncategorized" });
+    res.json({
+      category: "Uncategorized",
+      broadCategory: "Other",
+    });
   }
 }

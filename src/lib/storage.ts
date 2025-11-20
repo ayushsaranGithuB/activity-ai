@@ -1,10 +1,11 @@
 // IndexedDB Storage Layer for Activity AI
 
 import { openDB, type IDBPDatabase } from "idb";
-import type { Activity, Category, Aggregate, StorageStats } from "../types";
+import type { Activity, Category, Aggregate, StorageStats, BroadCategory } from "../types";
+import { getBroadCategoryForSubcategory } from "./broad-categories";
 
 const DB_NAME = "ActivityAI";
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented to support broad categories
 
 // Store names
 const STORES = {
@@ -17,10 +18,14 @@ class ActivityStorage {
     private db: IDBPDatabase | null = null;
 
     async init(): Promise<void> {
+        console.log("🔧 Storage: Initializing database...");
         this.db = await openDB(DB_NAME, DB_VERSION, {
-            upgrade(db) {
+            upgrade(db, oldVersion, newVersion, transaction) {
+                console.log(`🔧 Storage: Upgrading database from v${oldVersion} to v${newVersion}`);
+
                 // Activities store
                 if (!db.objectStoreNames.contains(STORES.ACTIVITIES)) {
+                    console.log("🔧 Storage: Creating ACTIVITIES store");
                     const activityStore = db.createObjectStore(STORES.ACTIVITIES, {
                         keyPath: "id",
                         autoIncrement: true,
@@ -32,15 +37,49 @@ class ActivityStorage {
 
                 // Categories store
                 if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
+                    console.log("🔧 Storage: Creating CATEGORIES store");
                     const categoryStore = db.createObjectStore(STORES.CATEGORIES, {
                         keyPath: "name",
                     });
                     categoryStore.createIndex("totalMinutes", "totalMinutes");
                     categoryStore.createIndex("lastUsedAt", "lastUsedAt");
+                    categoryStore.createIndex("broadCategory", "broadCategory");
+                    categoryStore.createIndex("isBroadCategory", "isBroadCategory");
+                } else if (oldVersion < 2) {
+                    // Migration: Add new indexes for broad categories
+                    console.log("🔧 Storage: Migrating CATEGORIES store to v2");
+                    const categoryStore = transaction.objectStore(STORES.CATEGORIES);
+                    if (!categoryStore.indexNames.contains("broadCategory")) {
+                        console.log("🔧 Storage: Adding broadCategory index");
+                        categoryStore.createIndex("broadCategory", "broadCategory");
+                    }
+                    if (!categoryStore.indexNames.contains("isBroadCategory")) {
+                        console.log("🔧 Storage: Adding isBroadCategory index");
+                        categoryStore.createIndex("isBroadCategory", "isBroadCategory");
+                    }
+
+                    // Migrate existing categories to assign broad categories
+                    console.log("🔧 Storage: Starting automatic category migration");
+                    categoryStore.openCursor().then(function migrateCursor(cursor) {
+                        if (!cursor) {
+                            console.log("🔧 Storage: Automatic category migration complete");
+                            return;
+                        }
+                        const category = cursor.value;
+                        if (!category.broadCategory) {
+                            const broadCat = getBroadCategoryForSubcategory(category.name);
+                            console.log(`🔧 Storage: Auto-migrating "${category.name}" → "${broadCat}"`);
+                            category.broadCategory = broadCat;
+                            category.isBroadCategory = false;
+                            cursor.update(category);
+                        }
+                        cursor.continue().then(migrateCursor);
+                    });
                 }
 
                 // Aggregates store
                 if (!db.objectStoreNames.contains(STORES.AGGREGATES)) {
+                    console.log("🔧 Storage: Creating AGGREGATES store");
                     const aggregateStore = db.createObjectStore(STORES.AGGREGATES, {
                         keyPath: ["category", "period", "periodStart"],
                     });
@@ -50,6 +89,7 @@ class ActivityStorage {
                 }
             },
         });
+        console.log("✅ Storage: Database initialized successfully");
     }
 
     private ensureDB(): IDBPDatabase {
@@ -116,8 +156,10 @@ class ActivityStorage {
     // ========================================================================
 
     async addOrUpdateCategory(category: Category): Promise<void> {
+        console.log("💾 Storage: addOrUpdateCategory called with:", category);
         const db = this.ensureDB();
         await db.put(STORES.CATEGORIES, category);
+        console.log("✅ Storage: addOrUpdateCategory completed for:", category.name);
     }
 
     async getCategory(name: string): Promise<Category | undefined> {
@@ -126,8 +168,11 @@ class ActivityStorage {
     }
 
     async getAllCategories(): Promise<Category[]> {
+        console.log("📊 Storage: getAllCategories called");
         const db = this.ensureDB();
-        return db.getAll(STORES.CATEGORIES);
+        const categories = await db.getAll(STORES.CATEGORIES);
+        console.log("✅ Storage: getAllCategories returned", categories.length, "categories:", categories);
+        return categories;
     }
 
     async getCategoryNames(): Promise<string[]> {
@@ -138,6 +183,22 @@ class ActivityStorage {
     async deleteCategory(name: string): Promise<void> {
         const db = this.ensureDB();
         await db.delete(STORES.CATEGORIES, name);
+    }
+
+    async getCategoriesByBroadCategory(
+        broadCategory: BroadCategory
+    ): Promise<Category[]> {
+        const db = this.ensureDB();
+        return db.getAllFromIndex(STORES.CATEGORIES, "broadCategory", broadCategory);
+    }
+
+    async getBroadCategories(): Promise<Category[]> {
+        const db = this.ensureDB();
+        return db.getAllFromIndex(STORES.CATEGORIES, "isBroadCategory", true);
+    }
+
+    async getSubcategories(broadCategory: BroadCategory): Promise<Category[]> {
+        return this.getCategoriesByBroadCategory(broadCategory);
     }
 
     async mergeCategories(from: string, into: string): Promise<void> {

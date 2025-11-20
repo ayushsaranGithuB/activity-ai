@@ -4,6 +4,18 @@
 // Core Domain Types
 // ============================================================================
 
+// Predefined broader category types
+export type BroadCategory =
+    | "Work & Professional"
+    | "Food & Nutrition"
+    | "Physical Activity"
+    | "Entertainment"
+    | "Home & Household"
+    | "Wellness & Self-Care"
+    | "Social"
+    | "Learning & Education"
+    | "Other";
+
 export interface Activity {
     id: number;
     text: string;
@@ -21,6 +33,8 @@ export interface ActivityMeta {
 export interface Category {
     name: string;
     description?: string;
+    broadCategory?: BroadCategory; // Parent category for subcategories
+    isBroadCategory?: boolean; // True if this is a top-level broad category
     totalMinutes: number;
     activityCount: number;
     createdAt: number;
@@ -112,11 +126,19 @@ export interface TrendData {
 
 export interface CategoryTrend {
     category: string;
+    broadCategory?: BroadCategory;
     totalMinutes: number;
     activityCount: number;
     averagePerDay?: number;
     percentageOfTotal?: number;
     changeFromPrevious?: number; // Percentage change
+}
+
+export interface BroadCategoryMapping {
+    broad: BroadCategory;
+    subcategories: string[];
+    description: string;
+    keywords: string[]; // Keywords for AI categorization
 }
 
 export interface TrendPeriod {

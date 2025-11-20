@@ -64,7 +64,8 @@ export async function conversation(req, res) {
     if (parsed.readyToSave && parsed.activityText) {
       response.activityToSave = {
         text: parsed.activityText,
-        category: parsed.category || "General",
+        category: parsed.subcategory || parsed.category || "General",
+        broadCategory: parsed.broadCategory || "Other",
       };
     }
 
