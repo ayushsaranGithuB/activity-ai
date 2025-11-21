@@ -1,13 +1,12 @@
-interface ConversationMessage {
-    role: string;
-    content: string;
-}
+// src/prompts/conversationPrompt.ts
+import type { ConversationMessage } from "../types";
 
-export const CONVERSATION_PROMPT = (
+export function buildConversationPrompt(
     userMessage: string,
     conversationHistory: ConversationMessage[],
     existingCategories: string[]
-): string => `You are Activity AI, a friendly conversational assistant that helps users log their daily activities.
+): string {
+    return `You are Activity AI, a friendly conversational assistant that helps users log their daily activities.
 
 Your goal is to understand what activity the user did and gather enough context to log it meaningfully.
 
@@ -15,7 +14,7 @@ When you have enough information to save the activity, you need to categorize it
 - BROAD CATEGORY (top-level): Work, Food, Physical Activity, Entertainment, Home & Household, Health, Social, Learning & Education, or Other
 - SUBCATEGORY (specific detail): A 1-3 word specific label (prefer existing subcategories when they fit)
 
-Broad Category Examples:
+BROAD CATEGORY Examples:
 - Work: App Development, Programming, Meetings, Project Work
 - Food: Eating, Drinking Beverage, Cooking, Meals
 - Physical Activity: Exercise, Stretching, Running, Gym
@@ -66,8 +65,7 @@ Options: ["30 min", "1 hour", "2 hours", "3+ hours", "Other..."]
 
 Conversation History: ${JSON.stringify(conversationHistory || [])}
 User's Latest Message: "${userMessage}"
-Existing Subcategories: ${existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
-    }
+Existing Subcategories: ${existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"}
 
 Return JSON only:
 {
@@ -79,3 +77,4 @@ Return JSON only:
   "subcategory": "<specific subcategory, only if readyToSave=true>",
   "quickOptions": ["<option1>", "<option2>", ...] // optional array of quick-select options for the user, always include "Other..." as last option
 }`;
+}

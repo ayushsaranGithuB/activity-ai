@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { generateContent } from "../lib/ai";
+import { getTrendsSummaryPrompt } from "../prompts/trendsSummaryPrompt";
 import { storage } from "../lib/storage";
 // import type { BroadCategory } from "../types";
 import { calculateCategoryTrends } from "../lib/trends";
@@ -172,41 +174,29 @@ export default function Trends() {
     returnSummary?: boolean,
     periodType?: "day" | "week" | "month"
   ) => {
-    // setSummaryLoading(true); // removed, not used
     setSummaryLoadingFor(periodType || "week");
     try {
-      const response = await fetch("/api/trends-summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          period: periodType || "week",
-          trends: enrichedTrends.map((t) => ({
-            category: t.category,
-            activityCount: t.activityCount,
-            totalMinutes: t.totalMinutes,
-          })),
-          totalActivities: filteredActivities.length,
-          activities: filteredActivities.map((a) => ({
-            text: a.text,
-            category: a.category,
-            createdAt: a.createdAt,
-          })),
-        }),
+      // Build the LLM prompt using the template
+      const prompt = getTrendsSummaryPrompt(
+        periodType || "week",
+        enrichedTrends,
+        filteredActivities.length,
+        filteredActivities
+      );
+      // Call centralized Gemini LLM function
+      const llmResponse = await generateContent(prompt, {
+        temperature: 0.8,
+        maxOutputTokens: 200,
+        responseMimeType: "text/plain",
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (returnSummary) {
-          return data.summary;
-        }
-      }
+      // Use response directly as summary
+      return llmResponse;
     } catch (error) {
       console.error("Failed to generate AI summary:", error);
+      return "AI summary failed.";
     } finally {
-      // setSummaryLoading(false); // removed, not used
       setSummaryLoadingFor(null);
     }
-    return undefined;
   };
   // const [loading, setLoading] = useState(true);
   const [allActivities, setAllActivities] = useState<Activity[]>([]);

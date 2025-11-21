@@ -48,3 +48,6 @@ coverage/
 .cache/
 .temp/
 .tmp/
+
+# Personal Gemini API key file
+src/ai-key.ts

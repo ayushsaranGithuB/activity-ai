@@ -1,15 +1,14 @@
-interface TrendData {
+// src/prompts/trendsSummaryPrompt.ts
+export interface TrendData {
     category: string;
     activityCount: number;
     totalMinutes: number;
 }
-
-interface ActivityData {
+export interface ActivityData {
     text: string;
     category: string;
     createdAt: number;
 }
-
 export const getTrendsSummaryPrompt = (
     period: "day" | "week" | "month" | "year",
     trends: TrendData[],
@@ -40,7 +39,6 @@ export const getTrendsSummaryPrompt = (
                 "",
                 "Generate a concise summary (1 sentence only):",
             ].join("\n");
-
         case "week":
             return [
                 "You are Activity AI, a friendly and encouraging assistant that helps users reflect on their activities.",
@@ -66,7 +64,6 @@ export const getTrendsSummaryPrompt = (
                 "",
                 "Generate a friendly summary (2-3 sentences only):",
             ].join("\n");
-
         case "month":
             return [
                 "You are Activity AI, that helps users reflect on their activities.",
@@ -91,7 +88,6 @@ export const getTrendsSummaryPrompt = (
                 "",
                 "Generate a friendly summary (2-3 sentences only):",
             ].join("\n");
-
         default:
             return [
                 "Reflect on your activities for this period.",
@@ -106,5 +102,4 @@ export const getTrendsSummaryPrompt = (
                 "Generate a summary (2-3 sentences only):",
             ].join("\n");
     }
-
 };

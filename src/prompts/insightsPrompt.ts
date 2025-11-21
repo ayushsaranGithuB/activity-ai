@@ -1,9 +1,9 @@
-interface Activity {
+// src/prompts/insightsPrompt.ts
+export interface Activity {
     text: string;
     category: string;
     createdAt: number;
 }
-
 export const INSIGHTS_PROMPT = (
     history: Activity[],
     categories: string[],

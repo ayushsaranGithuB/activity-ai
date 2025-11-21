@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { generateContent } from "../lib/ai";
+import { buildConversationPrompt } from "../prompts/conversationPrompt";
 import { storage } from "../lib/storage";
 import { getBroadCategoryForSubcategory } from "../lib/broad-categories";
 import { CircleDotDashed, Send, RotateCcw } from "lucide-react";
@@ -48,6 +50,7 @@ export default function Input({ resetKey }: InputProps) {
       setQuickOptions([]);
       setText("");
       setError(null);
+      setExistingCategories([]);
     }
   }, [resetKey]);
 
@@ -61,367 +64,320 @@ export default function Input({ resetKey }: InputProps) {
       timestamp: Date.now(),
     };
 
-    setConversationHistory((prev) => [...prev, userMessage]);
+    setConversationHistory((prev = []) => [...prev, userMessage]);
     setText("");
     setIsWaitingForResponse(true);
     setError(null);
 
+    // Build prompt for LLM (add stricter JSON instruction)
+    const prompt =
+      buildConversationPrompt(
+        userMessage.content,
+        [...conversationHistory, userMessage],
+        existingCategories
+      ) +
+      "\n\nIMPORTANT: Return ONLY valid JSON, no extra text, no comments, no explanations.";
+
+    let responseText;
     try {
-      console.log("📤 Sending request to /api/conversation", {
-        userMessage: userMessage.content,
-        historyLength: conversationHistory.length,
-      });
-
-      // Call conversation API
-      const res = await fetch("/api/conversation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userMessage: userMessage.content,
-          conversationHistory: conversationHistory.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          existingCategories,
-        }),
-      });
-
-      console.log("📥 Response received", { status: res.status });
-
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
+      responseText = await generateContent(prompt);
+      let parsed;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.warn("AI response was not valid JSON:", responseText);
+        parsed = {
+          assistantMessage: responseText,
+          quickOptions: [],
+          readyToSave: true,
+          activityText: userMessage.content,
+          subcategory: existingCategories[0] || "General",
+          broadCategory: getBroadCategoryForSubcategory(
+            existingCategories[0] || "General"
+          ),
+        };
+        toast.error("AI response was not valid JSON. Showing raw response.");
       }
-
-      const data = await res.json();
 
       // Add assistant message to history
-      const assistantMessage: ConversationMessage = {
+      const assistantMsg: ConversationMessage = {
         role: "assistant",
-        content: data.assistantMessage,
+        content: parsed.assistantMessage,
         timestamp: Date.now(),
       };
-
-      setConversationHistory((prev) => [...prev, assistantMessage]);
-
-      // Set quick options if provided
-      if (data.quickOptions && Array.isArray(data.quickOptions)) {
-        setQuickOptions(data.quickOptions);
-      } else {
-        setQuickOptions([]);
-      }
+      setConversationHistory((prev) => [...prev, assistantMsg]);
+      setQuickOptions(parsed.quickOptions || []);
 
       // If ready to save, save the activity
-      if (data.readyToSave && data.activityToSave) {
+      if (parsed.readyToSave && parsed.activityText) {
         setSaving(true);
-
-        const {
-          text: activityText,
-          category,
-          broadCategory,
-        } = data.activityToSave;
-
-        // Save to IndexedDB
-        await storage.addActivity({
-          text: activityText,
-          category,
-          createdAt: Date.now(),
-        });
-
-        // Update or create category with broad category
-        const existingCategory = await storage.getCategory(category);
-        if (existingCategory) {
-          existingCategory.activityCount++;
-          existingCategory.totalMinutes += 30; // Default 30 min
-          existingCategory.lastUsedAt = Date.now();
-          // Ensure broad category is set
-          if (!existingCategory.broadCategory) {
-            existingCategory.broadCategory =
-              broadCategory || getBroadCategoryForSubcategory(category);
-          }
-          await storage.addOrUpdateCategory(existingCategory);
-        } else {
-          await storage.addOrUpdateCategory({
-            name: category,
-            broadCategory:
-              broadCategory || getBroadCategoryForSubcategory(category),
-            isBroadCategory: false,
-            activityCount: 1,
-            totalMinutes: 30,
+        const activityText = parsed.activityText;
+        const category =
+          parsed.subcategory ||
+          parsed.category ||
+          existingCategories[0] ||
+          "General";
+        const broadCategory =
+          parsed.broadCategory || getBroadCategoryForSubcategory(category);
+        try {
+          await storage.addActivity({
+            text: activityText,
+            category,
             createdAt: Date.now(),
-            lastUsedAt: Date.now(),
           });
+          const existingCategory = await storage.getCategory(category);
+          if (existingCategory) {
+            existingCategory.activityCount++;
+            existingCategory.totalMinutes += 30;
+            existingCategory.lastUsedAt = Date.now();
+            if (!existingCategory.broadCategory) {
+              existingCategory.broadCategory = broadCategory;
+            }
+            await storage.addOrUpdateCategory(existingCategory);
+          } else {
+            await storage.addOrUpdateCategory({
+              name: category,
+              broadCategory,
+              isBroadCategory: false,
+              activityCount: 1,
+              totalMinutes: 30,
+              createdAt: Date.now(),
+              lastUsedAt: Date.now(),
+            });
+          }
+          toast.success(`Saved: ${activityText}`);
+          const categories = await storage.getCategoryNames();
+          setExistingCategories(categories);
+          setSaving(false);
+          setQuickOptions([]);
+        } catch (dbErr) {
+          console.error("SQLite/storage error:", dbErr);
+          setError(
+            "Failed to save activity: Database error (SQLite or storage). Please try again or check device storage permissions."
+          );
+          setSaving(false);
         }
+      }
+    } catch (llmErr) {
+      console.error("LLM error:", llmErr);
+      setError(
+        "Failed to process message: LLM service unavailable or returned an error."
+      );
+      setIsWaitingForResponse(false);
+      return;
+    }
+    setIsWaitingForResponse(false);
+  };
 
-        // Show success toast
-        toast.success(`Saved: ${activityText}`);
-
-        // Reload categories
-        const categories = await storage.getCategoryNames();
-        setExistingCategories(categories);
-
-        setSaving(false);
-        setQuickOptions([]); // Clear options after saving
+  // Handle quick option click
+  const handleQuickOption = async (option: string) => {
+    setError(null);
+    if (isWaitingForResponse || saving) return;
+    setIsWaitingForResponse(true);
+    let responseText;
+    try {
+      const prompt =
+        buildConversationPrompt(
+          option,
+          conversationHistory,
+          existingCategories
+        ) +
+        "\n\nIMPORTANT: Return ONLY valid JSON, no extra text, no comments, no explanations.";
+      responseText = await generateContent(prompt);
+      let parsed;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.warn("AI response was not valid JSON:", responseText);
+        parsed = {
+          assistantMessage: responseText,
+          quickOptions: [],
+          readyToSave: true,
+          activityText: option,
+          subcategory: existingCategories[0] || "General",
+          broadCategory: getBroadCategoryForSubcategory(
+            existingCategories[0] || "General"
+          ),
+        };
+        toast.error("AI response was not valid JSON. Showing raw response.");
+      }
+      const assistantMsg: ConversationMessage = {
+        role: "assistant",
+        content: parsed.assistantMessage,
+        timestamp: Date.now(),
+      };
+      setConversationHistory((prev) => [...prev, assistantMsg]);
+      setQuickOptions(parsed.quickOptions || []);
+      if (parsed.readyToSave && parsed.activityText) {
+        setSaving(true);
+        const activityText = parsed.activityText;
+        const category =
+          parsed.subcategory ||
+          parsed.category ||
+          existingCategories[0] ||
+          "General";
+        const broadCategory =
+          parsed.broadCategory || getBroadCategoryForSubcategory(category);
+        try {
+          await storage.addActivity({
+            text: activityText,
+            category,
+            createdAt: Date.now(),
+          });
+          const existingCategory = await storage.getCategory(category);
+          if (existingCategory) {
+            existingCategory.activityCount++;
+            existingCategory.totalMinutes += 30;
+            existingCategory.lastUsedAt = Date.now();
+            if (!existingCategory.broadCategory) {
+              existingCategory.broadCategory = broadCategory;
+            }
+            await storage.addOrUpdateCategory(existingCategory);
+          } else {
+            await storage.addOrUpdateCategory({
+              name: category,
+              broadCategory,
+              isBroadCategory: false,
+              activityCount: 1,
+              totalMinutes: 30,
+              createdAt: Date.now(),
+              lastUsedAt: Date.now(),
+            });
+          }
+          toast.success(`Saved: ${activityText}`);
+          const categories = await storage.getCategoryNames();
+          setExistingCategories(categories);
+          setSaving(false);
+          setQuickOptions([]);
+        } catch (dbErr) {
+          console.error("SQLite/storage error:", dbErr);
+          setError(
+            "Failed to save activity: Database error (SQLite or storage). Please try again or check device storage permissions."
+          );
+          setSaving(false);
+        }
       }
     } catch (e) {
-      console.error("Error in conversation:", e);
-      // Mark the last user message as failed
-      setConversationHistory((prev) =>
-        prev.map((msg, idx) =>
-          idx === prev.length - 1 && msg.role === "user"
-            ? { ...msg, error: true }
-            : msg
-        )
-      );
-      setError(
-        "Failed to process message. Make sure the server is running on port 3000."
-      );
+      console.error("Error in quick option:", e);
+      setError("Failed to process quick option.");
     } finally {
       setIsWaitingForResponse(false);
     }
   };
 
-  const handleQuickOption = (option: string) => {
-    if (option === "Other...") {
-      // Clear options and let user type
-      setQuickOptions([]);
-      const inputElement = document.getElementById(
-        "user-activity-input"
-      ) as HTMLInputElement | null;
-      if (inputElement) {
-        inputElement.focus();
+  // Stub for retry logic (can be implemented to resend failed messages)
+  const handleRetry = async (_idx: number) => {
+    setError(null);
+    if (isWaitingForResponse || saving) return;
+    // Find the user message to retry
+    const msgToRetry = conversationHistory[_idx];
+    if (!msgToRetry || msgToRetry.role !== "user") return;
+    setIsWaitingForResponse(true);
+    try {
+      // Build prompt for LLM
+      const prompt =
+        buildConversationPrompt(
+          msgToRetry.content,
+          conversationHistory.slice(0, _idx + 1),
+          existingCategories
+        ) +
+        "\n\nIMPORTANT: Return ONLY valid JSON, no extra text, no comments, no explanations.";
+      let responseText;
+      responseText = await generateContent(prompt);
+      let parsed;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.warn("AI response was not valid JSON:", responseText);
+        parsed = {
+          assistantMessage: responseText,
+          quickOptions: [],
+          readyToSave: true,
+          activityText: msgToRetry.content,
+          subcategory: existingCategories[0] || "General",
+          broadCategory: getBroadCategoryForSubcategory(
+            existingCategories[0] || "General"
+          ),
+        };
+        toast.error("AI response was not valid JSON. Showing raw response.");
       }
-    } else {
-      // Use the selected option as the user's response
-      setQuickOptions([]); // Clear options
-      setText("");
-
-      // Add user message to history
-      const userMessage: ConversationMessage = {
-        role: "user",
-        content: option,
-        timestamp: Date.now(),
-      };
-
-      setConversationHistory((prev) => [...prev, userMessage]);
-      setIsWaitingForResponse(true);
-      setError(null);
-
-      // Send to API
-      (async () => {
-        try {
-          const res = await fetch("/api/conversation", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userMessage: option,
-              conversationHistory: conversationHistory.map((msg) => ({
-                role: msg.role,
-                content: msg.content,
-              })),
-              existingCategories,
-            }),
-          });
-
-          if (!res.ok) {
-            throw new Error(`Server responded with status ${res.status}`);
-          }
-
-          const data = await res.json();
-
-          // Add assistant message to history
-          const assistantMessage: ConversationMessage = {
+      // Add assistant message to history (replace previous assistant message if exists)
+      setConversationHistory((prev) => {
+        const updated = [...prev];
+        // If next message is assistant and has error, replace it
+        if (
+          updated[_idx + 1] &&
+          updated[_idx + 1].role === "assistant" &&
+          updated[_idx + 1].error
+        ) {
+          updated[_idx + 1] = {
             role: "assistant",
-            content: data.assistantMessage,
+            content: parsed.assistantMessage,
             timestamp: Date.now(),
           };
-
-          setConversationHistory((prev) => [...prev, assistantMessage]);
-
-          // Set quick options if provided
-          if (data.quickOptions && Array.isArray(data.quickOptions)) {
-            setQuickOptions(data.quickOptions);
-          } else {
-            setQuickOptions([]);
-          }
-
-          // If ready to save, save the activity
-          if (data.readyToSave && data.activityToSave) {
-            setSaving(true);
-
-            const {
-              text: activityText,
-              category,
-              broadCategory,
-            } = data.activityToSave;
-
-            // Save to IndexedDB
-            await storage.addActivity({
-              text: activityText,
-              category,
-              createdAt: Date.now(),
-            });
-
-            // Update or create category with broad category
-            const existingCategory = await storage.getCategory(category);
-            if (existingCategory) {
-              existingCategory.activityCount++;
-              existingCategory.totalMinutes += 30;
-              existingCategory.lastUsedAt = Date.now();
-              // Ensure broad category is set
-              if (!existingCategory.broadCategory) {
-                existingCategory.broadCategory =
-                  broadCategory || getBroadCategoryForSubcategory(category);
-              }
-              await storage.addOrUpdateCategory(existingCategory);
-            } else {
-              await storage.addOrUpdateCategory({
-                name: category,
-                broadCategory:
-                  broadCategory || getBroadCategoryForSubcategory(category),
-                isBroadCategory: false,
-                activityCount: 1,
-                totalMinutes: 30,
-                createdAt: Date.now(),
-                lastUsedAt: Date.now(),
-              });
-            }
-
-            toast.success(`Saved: ${activityText}`);
-
-            const categories = await storage.getCategoryNames();
-            setExistingCategories(categories);
-
-            setSaving(false);
-            setQuickOptions([]);
-          }
-        } catch (e) {
-          console.error("Error in conversation:", e);
-          // Mark the last user message as failed
-          setConversationHistory((prev) =>
-            prev.map((msg, idx) =>
-              idx === prev.length - 1 && msg.role === "user"
-                ? { ...msg, error: true }
-                : msg
-            )
-          );
-          setError(
-            "Failed to process message. Make sure the server is running on port 3000."
-          );
-        } finally {
-          setIsWaitingForResponse(false);
-        }
-      })();
-    }
-  };
-
-  const handleRetry = async (messageIndex: number) => {
-    const failedMessage = conversationHistory[messageIndex];
-    if (!failedMessage || failedMessage.role !== "user" || !failedMessage.error)
-      return;
-
-    // Remove error flag and retry
-    const updatedHistory = conversationHistory.map((msg, idx) =>
-      idx === messageIndex ? { ...msg, error: false } : msg
-    );
-    setConversationHistory(updatedHistory);
-    setIsWaitingForResponse(true);
-    setError(null);
-
-    try {
-      const historyBeforeRetry = updatedHistory.slice(0, messageIndex);
-      const res = await fetch("/api/conversation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userMessage: failedMessage.content,
-          conversationHistory: historyBeforeRetry.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          existingCategories,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      const assistantMessage: ConversationMessage = {
-        role: "assistant",
-        content: data.assistantMessage,
-        timestamp: Date.now(),
-      };
-
-      // Remove any messages after the retried message and add the new response
-      setConversationHistory([
-        ...updatedHistory.slice(0, messageIndex + 1),
-        assistantMessage,
-      ]);
-
-      if (data.quickOptions && Array.isArray(data.quickOptions)) {
-        setQuickOptions(data.quickOptions);
-      } else {
-        setQuickOptions([]);
-      }
-
-      if (data.readyToSave && data.activityToSave) {
-        setSaving(true);
-
-        const {
-          text: activityText,
-          category,
-          broadCategory,
-        } = data.activityToSave;
-
-        await storage.addActivity({
-          text: activityText,
-          category,
-          createdAt: Date.now(),
-        });
-
-        const existingCategory = await storage.getCategory(category);
-        if (existingCategory) {
-          existingCategory.activityCount++;
-          existingCategory.totalMinutes += 30;
-          existingCategory.lastUsedAt = Date.now();
-          if (!existingCategory.broadCategory) {
-            existingCategory.broadCategory =
-              broadCategory || getBroadCategoryForSubcategory(category);
-          }
-          await storage.addOrUpdateCategory(existingCategory);
         } else {
-          await storage.addOrUpdateCategory({
-            name: category,
-            broadCategory:
-              broadCategory || getBroadCategoryForSubcategory(category),
-            isBroadCategory: false,
-            activityCount: 1,
-            totalMinutes: 30,
-            createdAt: Date.now(),
-            lastUsedAt: Date.now(),
+          updated.push({
+            role: "assistant",
+            content: parsed.assistantMessage,
+            timestamp: Date.now(),
           });
         }
-
-        toast.success(`Saved: ${activityText}`);
-
-        const categories = await storage.getCategoryNames();
-        setExistingCategories(categories);
-
-        setSaving(false);
-        setQuickOptions([]);
+        return updated;
+      });
+      setQuickOptions(parsed.quickOptions || []);
+      // If ready to save, save the activity
+      if (parsed.readyToSave && parsed.activityText) {
+        setSaving(true);
+        const activityText = parsed.activityText;
+        const category =
+          parsed.subcategory ||
+          parsed.category ||
+          existingCategories[0] ||
+          "General";
+        const broadCategory =
+          parsed.broadCategory || getBroadCategoryForSubcategory(category);
+        try {
+          await storage.addActivity({
+            text: activityText,
+            category,
+            createdAt: Date.now(),
+          });
+          const existingCategory = await storage.getCategory(category);
+          if (existingCategory) {
+            existingCategory.activityCount++;
+            existingCategory.totalMinutes += 30;
+            existingCategory.lastUsedAt = Date.now();
+            if (!existingCategory.broadCategory) {
+              existingCategory.broadCategory = broadCategory;
+            }
+            await storage.addOrUpdateCategory(existingCategory);
+          } else {
+            await storage.addOrUpdateCategory({
+              name: category,
+              broadCategory,
+              isBroadCategory: false,
+              activityCount: 1,
+              totalMinutes: 30,
+              createdAt: Date.now(),
+              lastUsedAt: Date.now(),
+            });
+          }
+          toast.success(`Saved: ${activityText}`);
+          const categories = await storage.getCategoryNames();
+          setExistingCategories(categories);
+          setSaving(false);
+          setQuickOptions([]);
+        } catch (dbErr) {
+          console.error("SQLite/storage error:", dbErr);
+          setError(
+            "Failed to save activity: Database error (SQLite or storage). Please try again or check device storage permissions."
+          );
+          setSaving(false);
+        }
       }
     } catch (e) {
-      console.error("Error retrying message:", e);
-      setConversationHistory((prev) =>
-        prev.map((msg, idx) =>
-          idx === messageIndex ? { ...msg, error: true } : msg
-        )
-      );
-      setError(
-        "Failed to process message. Make sure the server is running on port 3000."
-      );
+      console.error("Error in retry:", e);
+      setError("Failed to retry message.");
     } finally {
       setIsWaitingForResponse(false);
     }
@@ -445,9 +401,9 @@ export default function Input({ resetKey }: InputProps) {
           </>
         ) : (
           <div className="conversation">
-            {conversationHistory.map((msg, idx) => (
+            {conversationHistory.map((msg, _idx) => (
               <div
-                key={idx}
+                key={_idx}
                 className={`${
                   msg.role === "user" ? "user-message" : "assistant-message"
                 } ${msg.error ? "message-error" : ""}`}
@@ -456,7 +412,7 @@ export default function Input({ resetKey }: InputProps) {
                 {msg.error && msg.role === "user" && (
                   <button
                     className="retry-btn"
-                    onClick={() => handleRetry(idx)}
+                    onClick={() => handleRetry(_idx)}
                     disabled={isWaitingForResponse || saving}
                     title="Retry message"
                   >
@@ -472,9 +428,9 @@ export default function Input({ resetKey }: InputProps) {
       </div>
       {quickOptions.length > 0 && (
         <div className="quick-options">
-          {quickOptions.map((option, idx) => (
+          {quickOptions.map((option, _idx) => (
             <button
-              key={idx}
+              key={_idx}
               className="quick-option-btn"
               onClick={() => handleQuickOption(option)}
               disabled={isWaitingForResponse || saving}

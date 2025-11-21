@@ -89,19 +89,69 @@ export default function DevOptions() {
 
       // Process activities in batches to avoid overwhelming the API
       for (const activity of generalActivities) {
-        try {
-          const res = await fetch("/api/categorize", {
+        const { CATEGORIZE_PROMPT } = await import(
+          "../prompts/categorizePrompt"
+        );
+        const prompt = CATEGORIZE_PROMPT(activity.text, goodCategories, true);
+        const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "";
+        if (!apiKey) throw new Error("Gemini API key not set");
+        const response = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=" +
+            apiKey,
+          {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              text: activity.text,
-              existingCategories: goodCategories,
-              forceRecategorize: true, // Signal that we want a more specific category
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 100,
+                responseMimeType: "application/json",
+              },
             }),
-          });
-
-          const data = await res.json();
-          const newCategory = data.category;
+          }
+        );
+        const llmData = await response.json();
+        let newCategory = goodCategories[0] || "General";
+        try {
+          const result = JSON.parse(
+            llmData.candidates?.[0]?.content?.parts?.[0]?.text || "{}"
+          );
+          if (
+            result.subcategory &&
+            goodCategories.includes(result.subcategory)
+          ) {
+            newCategory = result.subcategory;
+          }
+        } catch {
+          // fallback to default
+        }
+        try {
+          // Build Gemini prompt
+          const { CATEGORIZE_PROMPT } = await import(
+            "../prompts/categorizePrompt"
+          );
+          const prompt = CATEGORIZE_PROMPT(activity.text, goodCategories, true);
+          // Use centralized Gemini LLM function
+          const llmResponse = await import("../lib/ai").then((mod) =>
+            mod.generateContent(prompt, {
+              temperature: 0.3,
+              maxOutputTokens: 100,
+              responseMimeType: "application/json",
+            })
+          );
+          // Use newCategory from above
+          try {
+            const result = JSON.parse(llmResponse);
+            if (
+              result.subcategory &&
+              goodCategories.includes(result.subcategory)
+            ) {
+              newCategory = result.subcategory;
+            }
+          } catch {
+            // fallback to default
+          }
 
           // Only update if we got a better category
           if (
@@ -145,7 +195,7 @@ export default function DevOptions() {
 
             updated++;
             console.log(
-              `✅ "${activity.text}" → ${oldCategory} → ${newCategory}`
+              `705 "${activity.text}" 192 ${oldCategory} 192 ${newCategory}`
             );
           }
 

@@ -45,9 +45,7 @@ export default function BarChart({ trends, onCategoryClick }: BarChartProps) {
             tick={{ fontSize: 12 }}
             label={{ value: "Minutes", angle: -90, position: "insideLeft" }}
           />
-          <Tooltip
-            formatter={(value, name, props) => [`${value} min`, "Time"]}
-          />
+          <Tooltip formatter={(value) => [`${value} min`, "Time"]} />
           <Bar
             dataKey="totalMinutes"
             onClick={(data) => onCategoryClick?.(data.category)}

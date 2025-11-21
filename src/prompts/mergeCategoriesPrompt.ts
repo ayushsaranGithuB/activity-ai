@@ -1,3 +1,4 @@
+// src/prompts/mergeCategoriesPrompt.ts
 export const MERGE_CATEGORIES_PROMPT = (categories: string[]): string => `You help refine categories by identifying redundant or overlapping labels.
 
 Given the following category list: ${categories.join(", ")}

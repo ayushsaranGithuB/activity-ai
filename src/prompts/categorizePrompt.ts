@@ -1,3 +1,4 @@
+// src/prompts/categorizePrompt.ts
 export const CATEGORIZE_PROMPT = (
     text: string,
     existingCategories: string[],
@@ -30,10 +31,7 @@ Rules:
 - The broad category helps group similar activities together
 - The subcategory provides specific detail
 
-${forceRecategorize
-        ? "IMPORTANT: This is a recategorization request. Be MORE SPECIFIC than a generic category."
-        : ""
-    }
+${forceRecategorize ? "IMPORTANT: This is a recategorization request. Be MORE SPECIFIC than a generic category." : ""}
 
 Examples:
 - "ate lunch: chicken salad" → { "broadCategory": "Food", "subcategory": "Meals" }
@@ -45,7 +43,6 @@ Examples:
 - "stretched for 10 minutes" → { "broadCategory": "Physical Activity", "subcategory": "Stretching" }
 
 User activity: "${text}"
-Existing subcategories: ${existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"
-    }
+Existing subcategories: ${existingCategories.length > 0 ? existingCategories.join(", ") : "None yet"}
 
 Return JSON only: { "broadCategory": "<broad>", "subcategory": "<specific>" }`;

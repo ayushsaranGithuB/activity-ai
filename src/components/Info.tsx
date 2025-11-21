@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Info as InfoIcon, Github, Globe, Heart } from "lucide-react";
+import { Info as InfoIcon, Heart } from "lucide-react";
 import { storage } from "../lib/storage";
 
 export default function Info() {
@@ -12,42 +12,29 @@ export default function Info() {
     logLifetime: "N/A",
   });
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
   const loadStats = async () => {
     try {
       const storageStats = await storage.getStats();
       const categories = await storage.getAllCategories();
-
-      // Get unique broad categories from all subcategories
       const broadCategoriesSet = new Set<string>();
       categories.forEach((c) => {
         if (c.broadCategory) {
           broadCategoriesSet.add(c.broadCategory);
         }
       });
-
-      // Count subcategories (categories that are not broad categories themselves)
       const subcategories = categories.filter((c) => !c.isBroadCategory);
-
       let firstDate = "N/A";
       let lastDate = "N/A";
       let lifetime = "N/A";
-
       if (storageStats.oldestActivity && storageStats.newestActivity) {
         firstDate = new Date(storageStats.oldestActivity).toLocaleDateString();
         lastDate = new Date(storageStats.newestActivity).toLocaleDateString();
-
-        // Calculate inclusive lifetime
         const msPerDay = 1000 * 60 * 60 * 24;
         const startDay = Math.floor(storageStats.oldestActivity / msPerDay);
         const endDay = Math.floor(storageStats.newestActivity / msPerDay);
         const diffDays = endDay - startDay + 1;
         const months = Math.floor(diffDays / 30);
         const days = diffDays % 30;
-
         if (months > 0) {
           lifetime = `${months} month${months > 1 ? "s" : ""}, ${days} day${
             days !== 1 ? "s" : ""
@@ -58,7 +45,6 @@ export default function Info() {
           lifetime = "Less than a day";
         }
       }
-
       setStats({
         firstActivityDate: firstDate,
         lastActivityDate: lastDate,
@@ -71,6 +57,12 @@ export default function Info() {
       console.error("Failed to load stats:", err);
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      await loadStats();
+    })();
+  }, []);
 
   return (
     <div className="app-info">
