@@ -1,25 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
-import type { BroadCategory } from "../types";
+// import type { BroadCategory } from "../types";
 import { calculateCategoryTrends } from "../lib/trends";
 import type { Activity, CategoryTrend } from "../types";
-import { getOffsetPeriodRange, formatPeriodLabel } from "../lib/date-utils";
+import { getOffsetPeriodRange } from "../lib/date-utils";
 import PieChart from "./charts/PieChart";
 import BarChart from "./charts/BarChart";
 import "../css/trends.css";
 import { ChartNoAxesCombined } from "lucide-react";
 
-interface TrendsProps {
-  onCategoryClick?: (
-    category: string,
-    dateRange: { start: number; end: number }
-  ) => void;
-}
-
-export default function Trends({ onCategoryClick }: TrendsProps) {
+export default function Trends() {
   // Load all period data (today, week, month)
   const loadAllPeriodData = async () => {
-    setLoading(true);
+    // setLoading(true); // removed, not used
     try {
       await storage.init();
       const allActs = await storage.getAllActivities();
@@ -59,7 +52,9 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
               todaySummary = parsed.summary;
               cacheValid = true;
             }
-          } catch {}
+          } catch (err) {
+            console.error("Error parsing day summary cache:", err);
+          }
         }
         if (!cacheValid) {
           todaySummary =
@@ -91,7 +86,9 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
         if (cache) {
           try {
             cacheObj = JSON.parse(cache);
-          } catch {}
+          } catch (err) {
+            console.error("Error parsing week summary cache:", err);
+          }
         }
         const now = Date.now();
         const sixHours = 6 * 60 * 60 * 1000;
@@ -126,7 +123,9 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
         if (cache) {
           try {
             cacheObj = JSON.parse(cache);
-          } catch {}
+          } catch (err) {
+            console.error("Error parsing month summary cache:", err);
+          }
         }
         const now = Date.now();
         const sixHours = 6 * 60 * 60 * 1000;
@@ -163,7 +162,7 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
     } catch (err) {
       console.error("Failed to load trends:", err);
     } finally {
-      setLoading(false);
+      // setLoading(false); // removed, not used
     }
   };
   // Helper to generate AI summary
@@ -173,7 +172,7 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
     returnSummary?: boolean,
     periodType?: "day" | "week" | "month"
   ) => {
-    setSummaryLoading(true);
+    // setSummaryLoading(true); // removed, not used
     setSummaryLoadingFor(periodType || "week");
     try {
       const response = await fetch("/api/trends-summary", {
@@ -204,12 +203,12 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
     } catch (error) {
       console.error("Failed to generate AI summary:", error);
     } finally {
-      setSummaryLoading(false);
+      // setSummaryLoading(false); // removed, not used
       setSummaryLoadingFor(null);
     }
     return undefined;
   };
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [allActivities, setAllActivities] = useState<Activity[]>([]);
   const [periodData, setPeriodData] = useState<{
     today: { activities: Activity[]; trends: CategoryTrend[]; summary: string };
@@ -226,7 +225,7 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
     month: boolean;
   }>({ today: false, week: false, month: false });
   const [chartType, setChartType] = useState<"pie" | "bar">("bar");
-  const [summaryLoading, setSummaryLoading] = useState(false);
+  // const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryLoadingFor, setSummaryLoadingFor] = useState<
     "day" | "week" | "month" | null
   >(null);
@@ -291,34 +290,24 @@ export default function Trends({ onCategoryClick }: TrendsProps) {
                 Bar Chart
               </button>
             </div>
-            {data.trends.length > 0 ? (
+            {/* Always show spinner if summary is loading for this period */}
+            {summaryLoadingFor === periodType ? (
+              <div className="ai-summary loading">
+                <div className="summary-spinner" aria-hidden />
+                <p>Generating summary…</p>
+              </div>
+            ) : data.trends.length > 0 ? (
               <>
                 {chartType === "pie" ? (
                   <PieChart trends={data.trends} />
                 ) : (
                   <BarChart trends={data.trends} />
                 )}
-
-                {/* Show spinner when generating summary for this period. */}
-                {(() => {
-                  const periodType = periodKey === "today" ? "day" : periodKey;
-                  if (summaryLoadingFor === periodType) {
-                    return (
-                      <div className="ai-summary loading">
-                        <div className="summary-spinner" aria-hidden />
-                        <p>Generating summary…</p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    data.summary && (
-                      <div className="ai-summary">
-                        <p>{data.summary}</p>
-                      </div>
-                    )
-                  );
-                })()}
+                {data.summary && (
+                  <div className="ai-summary">
+                    <p>{data.summary}</p>
+                  </div>
+                )}
                 <button
                   className="expand-activities-btn"
                   onClick={() =>
