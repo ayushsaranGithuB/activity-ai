@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { GeminiNano } from "activity-cap-plugin-nano";
-import {
-  addActivity,
-  getCategory,
-  addOrUpdateCategory,
-  getAllCategories,
-  initDB,
-} from "../lib/db";
+import { storage } from "../lib/storage";
 import { getBroadCategoryForSubcategory } from "../lib/broad-categories";
 import { CircleDotDashed, Send, RotateCcw } from "lucide-react";
 import type { ConversationMessage } from "../types";
@@ -31,11 +24,11 @@ export default function Input({ resetKey }: InputProps) {
   useEffect(() => {
     const init = async () => {
       try {
-        await initDB();
-        const categories = await getAllCategories();
-        setExistingCategories(categories.map((c) => c.name));
+        await storage.init();
+        const categories = await storage.getCategoryNames();
+        setExistingCategories(categories);
       } catch (err) {
-        console.error("Failed to initialize SQLite:", err);
+        console.error("Failed to initialize storage:", err);
       }
     };
     init();
@@ -74,15 +67,32 @@ export default function Input({ resetKey }: InputProps) {
     setError(null);
 
     try {
-      // Call GeminiNano plugin
-      const data = await GeminiNano.categorizeConversation({
+      console.log("📤 Sending request to /api/conversation", {
         userMessage: userMessage.content,
-        conversationHistory: conversationHistory.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        existingCategories,
+        historyLength: conversationHistory.length,
       });
+
+      // Call conversation API
+      const res = await fetch("/api/conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userMessage: userMessage.content,
+          conversationHistory: conversationHistory.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          existingCategories,
+        }),
+      });
+
+      console.log("📥 Response received", { status: res.status });
+
+      if (!res.ok) {
+        throw new Error(`Server responded with status ${res.status}`);
+      }
+
+      const data = await res.json();
 
       // Add assistant message to history
       const assistantMessage: ConversationMessage = {
@@ -110,34 +120,30 @@ export default function Input({ resetKey }: InputProps) {
           broadCategory,
         } = data.activityToSave;
 
-        // Save to SQLite
-        await addActivity({
+        // Save to IndexedDB
+        await storage.addActivity({
           text: activityText,
           category,
           createdAt: Date.now(),
         });
 
         // Update or create category with broad category
-        const existingCategory = await getCategory(category);
+        const existingCategory = await storage.getCategory(category);
         if (existingCategory) {
           existingCategory.activityCount++;
           existingCategory.totalMinutes += 30; // Default 30 min
           existingCategory.lastUsedAt = Date.now();
           // Ensure broad category is set
           if (!existingCategory.broadCategory) {
-            existingCategory.broadCategory = (broadCategory ||
-              getBroadCategoryForSubcategory(
-                category
-              )) as import("../types").BroadCategory;
+            existingCategory.broadCategory =
+              broadCategory || getBroadCategoryForSubcategory(category);
           }
-          await addOrUpdateCategory(existingCategory);
+          await storage.addOrUpdateCategory(existingCategory);
         } else {
-          await addOrUpdateCategory({
+          await storage.addOrUpdateCategory({
             name: category,
-            broadCategory: (broadCategory ||
-              getBroadCategoryForSubcategory(
-                category
-              )) as import("../types").BroadCategory,
+            broadCategory:
+              broadCategory || getBroadCategoryForSubcategory(category),
             isBroadCategory: false,
             activityCount: 1,
             totalMinutes: 30,
@@ -150,8 +156,8 @@ export default function Input({ resetKey }: InputProps) {
         toast.success(`Saved: ${activityText}`);
 
         // Reload categories
-        const categories = await getAllCategories();
-        setExistingCategories(categories.map((c) => c.name));
+        const categories = await storage.getCategoryNames();
+        setExistingCategories(categories);
 
         setSaving(false);
         setQuickOptions([]); // Clear options after saving
@@ -167,7 +173,7 @@ export default function Input({ resetKey }: InputProps) {
         )
       );
       setError(
-        "Failed to process message. Please check your device and Gemini Nano setup."
+        "Failed to process message. Make sure the server is running on port 3000."
       );
     } finally {
       setIsWaitingForResponse(false);
@@ -200,17 +206,27 @@ export default function Input({ resetKey }: InputProps) {
       setIsWaitingForResponse(true);
       setError(null);
 
-      // Send to GeminiNano plugin
+      // Send to API
       (async () => {
         try {
-          const data = await GeminiNano.categorizeConversation({
-            userMessage: option,
-            conversationHistory: conversationHistory.map((msg) => ({
-              role: msg.role,
-              content: msg.content,
-            })),
-            existingCategories,
+          const res = await fetch("/api/conversation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userMessage: option,
+              conversationHistory: conversationHistory.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+              })),
+              existingCategories,
+            }),
           });
+
+          if (!res.ok) {
+            throw new Error(`Server responded with status ${res.status}`);
+          }
+
+          const data = await res.json();
 
           // Add assistant message to history
           const assistantMessage: ConversationMessage = {
@@ -238,34 +254,30 @@ export default function Input({ resetKey }: InputProps) {
               broadCategory,
             } = data.activityToSave;
 
-            // Save to SQLite
-            await addActivity({
+            // Save to IndexedDB
+            await storage.addActivity({
               text: activityText,
               category,
               createdAt: Date.now(),
             });
 
             // Update or create category with broad category
-            const existingCategory = await getCategory(category);
+            const existingCategory = await storage.getCategory(category);
             if (existingCategory) {
               existingCategory.activityCount++;
               existingCategory.totalMinutes += 30;
               existingCategory.lastUsedAt = Date.now();
               // Ensure broad category is set
               if (!existingCategory.broadCategory) {
-                existingCategory.broadCategory = (broadCategory ||
-                  getBroadCategoryForSubcategory(
-                    category
-                  )) as import("../types").BroadCategory;
+                existingCategory.broadCategory =
+                  broadCategory || getBroadCategoryForSubcategory(category);
               }
-              await addOrUpdateCategory(existingCategory);
+              await storage.addOrUpdateCategory(existingCategory);
             } else {
-              await addOrUpdateCategory({
+              await storage.addOrUpdateCategory({
                 name: category,
-                broadCategory: (broadCategory ||
-                  getBroadCategoryForSubcategory(
-                    category
-                  )) as import("../types").BroadCategory,
+                broadCategory:
+                  broadCategory || getBroadCategoryForSubcategory(category),
                 isBroadCategory: false,
                 activityCount: 1,
                 totalMinutes: 30,
@@ -276,8 +288,8 @@ export default function Input({ resetKey }: InputProps) {
 
             toast.success(`Saved: ${activityText}`);
 
-            const categories = await getAllCategories();
-            setExistingCategories(categories.map((c) => c.name));
+            const categories = await storage.getCategoryNames();
+            setExistingCategories(categories);
 
             setSaving(false);
             setQuickOptions([]);
@@ -293,7 +305,7 @@ export default function Input({ resetKey }: InputProps) {
             )
           );
           setError(
-            "Failed to process message. Please check your device and Gemini Nano setup."
+            "Failed to process message. Make sure the server is running on port 3000."
           );
         } finally {
           setIsWaitingForResponse(false);
@@ -317,14 +329,24 @@ export default function Input({ resetKey }: InputProps) {
 
     try {
       const historyBeforeRetry = updatedHistory.slice(0, messageIndex);
-      const data = await GeminiNano.categorizeConversation({
-        userMessage: failedMessage.content,
-        conversationHistory: historyBeforeRetry.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        existingCategories,
+      const res = await fetch("/api/conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userMessage: failedMessage.content,
+          conversationHistory: historyBeforeRetry.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          existingCategories,
+        }),
       });
+
+      if (!res.ok) {
+        throw new Error(`Server responded with status ${res.status}`);
+      }
+
+      const data = await res.json();
 
       const assistantMessage: ConversationMessage = {
         role: "assistant",
@@ -353,31 +375,27 @@ export default function Input({ resetKey }: InputProps) {
           broadCategory,
         } = data.activityToSave;
 
-        await addActivity({
+        await storage.addActivity({
           text: activityText,
           category,
           createdAt: Date.now(),
         });
 
-        const existingCategory = await getCategory(category);
+        const existingCategory = await storage.getCategory(category);
         if (existingCategory) {
           existingCategory.activityCount++;
           existingCategory.totalMinutes += 30;
           existingCategory.lastUsedAt = Date.now();
           if (!existingCategory.broadCategory) {
-            existingCategory.broadCategory = (broadCategory ||
-              getBroadCategoryForSubcategory(
-                category
-              )) as import("../types").BroadCategory;
+            existingCategory.broadCategory =
+              broadCategory || getBroadCategoryForSubcategory(category);
           }
-          await addOrUpdateCategory(existingCategory);
+          await storage.addOrUpdateCategory(existingCategory);
         } else {
-          await addOrUpdateCategory({
+          await storage.addOrUpdateCategory({
             name: category,
-            broadCategory: (broadCategory ||
-              getBroadCategoryForSubcategory(
-                category
-              )) as import("../types").BroadCategory,
+            broadCategory:
+              broadCategory || getBroadCategoryForSubcategory(category),
             isBroadCategory: false,
             activityCount: 1,
             totalMinutes: 30,
@@ -388,8 +406,8 @@ export default function Input({ resetKey }: InputProps) {
 
         toast.success(`Saved: ${activityText}`);
 
-        const categories = await getAllCategories();
-        setExistingCategories(categories.map((c) => c.name));
+        const categories = await storage.getCategoryNames();
+        setExistingCategories(categories);
 
         setSaving(false);
         setQuickOptions([]);

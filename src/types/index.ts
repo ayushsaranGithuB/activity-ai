@@ -53,7 +53,7 @@ export interface Aggregate {
 // API Request/Response Types
 // ============================================================================
 
-// Categorize request/response
+// POST /api/categorize
 export interface CategorizeRequest {
     text: string;
     existingCategories?: string[];
@@ -64,7 +64,7 @@ export interface CategorizeResponse {
     error?: string;
 }
 
-// Insights request/response
+// POST /api/insights
 export interface InsightsRequest {
     history: Activity[];
     categories: string[];
@@ -77,7 +77,7 @@ export interface InsightsResponse {
     insight: string;
 }
 
-// Merge categories request/response
+// POST /api/merge-categories
 export interface MergeCategoriesRequest {
     categories: string[];
 }
@@ -91,7 +91,7 @@ export interface MergeCategoriesResponse {
     merges: CategoryMerge[];
 }
 
-// Health check response
+// GET /api/health
 export interface HealthResponse {
     status: "ok" | "error";
     timestamp: number;
@@ -220,7 +220,7 @@ export interface ConversationContext {
     category?: string;
 }
 
-// Conversation request/response
+// POST /api/conversation
 export interface ConversationRequest {
     userMessage: string;
     conversationHistory?: ConversationMessage[];

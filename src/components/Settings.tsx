@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "../lib/storage";
-import { migrateBackupJsonToSQLite } from "../lib/db";
 import { testDatabase } from "../test-db";
 import CategoryEvaluation from "./CategoryEvaluation";
 import CategoryMigration from "./CategoryMigration";
@@ -102,13 +101,18 @@ export default function Settings() {
 
       for (const activity of generalActivities) {
         try {
-          // Use GeminiNano plugin for categorization
-          const data = await GeminiNano.categorizeConversation({
-            userMessage: activity.text,
-            conversationHistory: [],
-            existingCategories: goodCategories,
+          const res = await fetch("/api/categorize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: activity.text,
+              existingCategories: goodCategories,
+              forceRecategorize: true,
+            }),
           });
-          const newCategory = data.activityToSave?.category;
+
+          const data = await res.json();
+          const newCategory = data.category;
 
           if (
             newCategory &&
@@ -175,30 +179,6 @@ export default function Settings() {
     }
   };
 
-  // Migration from backup JSON to SQLite
-  const [isMigratingBackup, setIsMigratingBackup] = useState(false);
-  const migrateBackup = async () => {
-    if (
-      !confirm(
-        "This will import all data from your backup JSON into SQLite. Continue?"
-      )
-    )
-      return;
-    setIsMigratingBackup(true);
-    try {
-      const result = await migrateBackupJsonToSQLite();
-      alert(
-        `Migration complete!\nActivities: ${result.activities}\nCategories: ${result.categories}\nAggregates: ${result.aggregates}`
-      );
-      window.location.reload();
-    } catch (err) {
-      console.error("Migration from backup failed:", err);
-      alert("Migration from backup failed. See console for details.");
-    } finally {
-      setIsMigratingBackup(false);
-    }
-  };
-
   return (
     <div className="settings">
       <h2>Settings</h2>
@@ -233,15 +213,6 @@ export default function Settings() {
             disabled={isRecategorizing}
           >
             {isRecategorizing ? "Recategorizing..." : "Recategorize"}
-          </button>
-          <button
-            onClick={migrateBackup}
-            className="btn-warning"
-            disabled={isMigratingBackup}
-          >
-            {isMigratingBackup
-              ? "Migrating Backup..."
-              : "Migrate Backup JSON to SQLite"}
           </button>
         </div>
       </section>
