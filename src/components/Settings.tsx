@@ -46,6 +46,27 @@ export default function Settings() {
     }
   };
 
+  // Backup all IndexedDB data and trigger download
+  const backupAllData = async () => {
+    try {
+      const data = await storage.exportAllData();
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `activity-ai-backup-${new Date().toISOString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      alert("Backup downloaded as JSON file.");
+    } catch (err) {
+      console.error("Failed to backup data:", err);
+      alert("Failed to backup data");
+    }
+  };
+
   const recategorizeActivities = async () => {
     if (
       !confirm(
@@ -201,6 +222,9 @@ export default function Settings() {
         <div className="settings-actions">
           <button onClick={clearAllData} className="btn-danger">
             Clear All Data
+          </button>
+          <button onClick={backupAllData} className="btn-info">
+            Backup Data
           </button>
           <button
             onClick={() => {

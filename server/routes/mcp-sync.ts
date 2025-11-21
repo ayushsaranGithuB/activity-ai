@@ -29,17 +29,11 @@ export async function mcpSync(
     reply: FastifyReply
 ): Promise<void> {
     try {
-        const { activities, categories } = request.body as SyncRequest;
-
-        mcpStorage.setActivities(activities);
-        mcpStorage.setCategories(categories);
-
+        // Data is now always loaded from SQLite, so syncing is not needed
         reply.send({
             success: true,
-            synced: {
-                activities: activities.length,
-                categories: categories.length,
-            },
+            synced: null,
+            message: 'MCPStorage now uses SQLite. No sync needed.'
         });
     } catch (error) {
         console.error("MCP sync error:", error);

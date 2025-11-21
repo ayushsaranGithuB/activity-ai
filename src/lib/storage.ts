@@ -311,6 +311,22 @@ class ActivityStorage {
             this.db = null;
         }
     }
+
+    /**
+     * Export all IndexedDB data as a JSON object for backup purposes.
+     */
+    async exportAllData(): Promise<{ activities: Activity[]; categories: Category[]; aggregates: Aggregate[] }> {
+        const activities = await this.getAllActivities();
+        const categories = await this.getAllCategories();
+        const aggregatesWeek = await this.getAggregatesByPeriod("week");
+        const aggregatesMonth = await this.getAggregatesByPeriod("month");
+        const aggregatesYear = await this.getAggregatesByPeriod("year");
+        return {
+            activities,
+            categories,
+            aggregates: [...aggregatesWeek, ...aggregatesMonth, ...aggregatesYear],
+        };
+    }
 }
 
 // Singleton instance

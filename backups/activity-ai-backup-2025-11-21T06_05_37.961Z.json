@@ -1,0 +1,181 @@
+{
+  "activities": [
+    {
+      "text": "drinking tea",
+      "category": "Drinking Beverage",
+      "createdAt": 1763556706672,
+      "id": 7
+    },
+    {
+      "text": "Working on this app",
+      "category": "App Development",
+      "createdAt": 1763557145500,
+      "id": 8
+    },
+    {
+      "text": "Ate dinner: tuna sandwich",
+      "category": "Eating",
+      "createdAt": 1763569510690,
+      "id": 11
+    },
+    {
+      "text": "Working on an AI assistant app",
+      "category": "App Development",
+      "createdAt": 1763569779689,
+      "id": 12
+    },
+    {
+      "text": "Drank green tea",
+      "category": "Drinking Beverage",
+      "createdAt": 1763571365160,
+      "id": 13
+    },
+    {
+      "text": "Stretched",
+      "category": "Stretching",
+      "createdAt": 1763571713261,
+      "id": 14
+    },
+    {
+      "text": "Cleaned the back closet",
+      "category": "Household Cleaning",
+      "createdAt": 1763571924050,
+      "id": 15
+    },
+    {
+      "text": "Watched a few episodes of Seinfeld",
+      "category": "Watching TV",
+      "createdAt": 1763572266013,
+      "id": 16
+    },
+    {
+      "text": "Got some sun and lounged about",
+      "category": "Relaxing Outdoors",
+      "createdAt": 1763572531164,
+      "id": 17
+    },
+    {
+      "text": "Relaxed and lounged about in the sun.",
+      "category": "Sunbathing",
+      "createdAt": 1763572537007,
+      "id": 18
+    },
+    {
+      "text": "Drank hot green tea",
+      "category": "Drinking Beverage",
+      "createdAt": 1763610823537,
+      "id": 19
+    },
+    {
+      "text": "Worked on app for 2 hours",
+      "category": "App Development",
+      "createdAt": 1763617808523,
+      "id": 20
+    },
+    {
+      "text": "Drank fresh orange juice made at home",
+      "category": "Drinking Beverage",
+      "createdAt": 1763622678575,
+      "id": 21
+    },
+    {
+      "text": "Napped for 30 minutes",
+      "category": "Relaxing Outdoors",
+      "createdAt": 1763626829252,
+      "id": 22
+    },
+    {
+      "text": "Ate dinner: asian set meal with apple pie and ice cream for dessert",
+      "category": "Meals",
+      "createdAt": 1763654800648,
+      "id": 23
+    }
+  ],
+  "categories": [
+    {
+      "name": "App Development",
+      "totalMinutes": 90,
+      "activityCount": 3,
+      "lastUsedAt": 1763617808526,
+      "broadCategory": "Work",
+      "isBroadCategory": false
+    },
+    {
+      "name": "Drinking Beverage",
+      "activityCount": 4,
+      "totalMinutes": 120,
+      "createdAt": 1763556706674,
+      "lastUsedAt": 1763622678580,
+      "broadCategory": "Food",
+      "isBroadCategory": false
+    },
+    {
+      "name": "Eating",
+      "activityCount": 1,
+      "totalMinutes": 30,
+      "createdAt": 1763569510694,
+      "lastUsedAt": 1763569510694,
+      "broadCategory": "Food",
+      "isBroadCategory": false
+    },
+    {
+      "name": "Household Cleaning",
+      "totalMinutes": 30,
+      "activityCount": 1,
+      "lastUsedAt": 1763610646891,
+      "broadCategory": "Home & Household",
+      "isBroadCategory": false
+    },
+    {
+      "name": "Meals",
+      "broadCategory": "Food",
+      "isBroadCategory": false,
+      "activityCount": 1,
+      "totalMinutes": 30,
+      "createdAt": 1763654800651,
+      "lastUsedAt": 1763654800651
+    },
+    {
+      "name": "Relaxing Outdoors",
+      "totalMinutes": 60,
+      "activityCount": 2,
+      "lastUsedAt": 1763626829256,
+      "broadCategory": "Health",
+      "isBroadCategory": false
+    },
+    {
+      "name": "Stretching",
+      "totalMinutes": 30,
+      "activityCount": 1,
+      "lastUsedAt": 1763610646019,
+      "broadCategory": "Physical Activity",
+      "isBroadCategory": false
+    },
+    {
+      "name": "Sunbathing",
+      "totalMinutes": 30,
+      "activityCount": 1,
+      "lastUsedAt": 1763610649599,
+      "broadCategory": "Health",
+      "isBroadCategory": false
+    },
+    {
+      "name": "Uncategorized",
+      "activityCount": 2,
+      "totalMinutes": 60,
+      "createdAt": 1763568021839,
+      "lastUsedAt": 1763568054363,
+      "broadCategory": "Food",
+      "isBroadCategory": false
+    },
+    {
+      "name": "Watching TV",
+      "totalMinutes": 30,
+      "activityCount": 1,
+      "lastUsedAt": 1763610647631,
+      "broadCategory": "Entertainment",
+      "isBroadCategory": false
+    }
+  ],
+  "aggregates": []
+}
