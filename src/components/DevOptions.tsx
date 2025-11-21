@@ -90,18 +90,13 @@ export default function DevOptions() {
       // Process activities in batches to avoid overwhelming the API
       for (const activity of generalActivities) {
         try {
-          const res = await fetch("/api/categorize", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: activity.text,
-              existingCategories: goodCategories,
-              forceRecategorize: true, // Signal that we want a more specific category
-            }),
+          // Use GeminiNano plugin for categorization
+          const data = await GeminiNano.categorizeConversation({
+            userMessage: activity.text,
+            conversationHistory: [],
+            existingCategories: goodCategories,
           });
-
-          const data = await res.json();
-          const newCategory = data.category;
+          const newCategory = data.activityToSave?.category;
 
           // Only update if we got a better category
           if (

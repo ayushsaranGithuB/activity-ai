@@ -172,38 +172,29 @@ export default function Trends() {
     returnSummary?: boolean,
     periodType?: "day" | "week" | "month"
   ) => {
-    // setSummaryLoading(true); // removed, not used
     setSummaryLoadingFor(periodType || "week");
     try {
-      const response = await fetch("/api/trends-summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          period: periodType || "week",
-          trends: enrichedTrends.map((t) => ({
-            category: t.category,
-            activityCount: t.activityCount,
-            totalMinutes: t.totalMinutes,
-          })),
-          totalActivities: filteredActivities.length,
-          activities: filteredActivities.map((a) => ({
-            text: a.text,
-            category: a.category,
-            createdAt: a.createdAt,
-          })),
-        }),
+      // Use GeminiNano plugin for summary
+      const data = await GeminiNano.trendsSummary({
+        period: periodType || "week",
+        trends: enrichedTrends.map((t) => ({
+          category: t.category,
+          activityCount: t.activityCount,
+          totalMinutes: t.totalMinutes,
+        })),
+        totalActivities: filteredActivities.length,
+        activities: filteredActivities.map((a) => ({
+          text: a.text,
+          category: a.category,
+          createdAt: a.createdAt,
+        })),
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (returnSummary) {
-          return data.summary;
-        }
+      if (returnSummary) {
+        return data.summary;
       }
     } catch (error) {
       console.error("Failed to generate AI summary:", error);
     } finally {
-      // setSummaryLoading(false); // removed, not used
       setSummaryLoadingFor(null);
     }
     return undefined;
