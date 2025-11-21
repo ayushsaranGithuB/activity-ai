@@ -1,6 +1,14 @@
 {
-  "appId": "activity.ai.ts",
+  "appId": "com.activityai",
   "appName": "activity-ai-ts",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#ffffff",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    }
+  }
 }
