@@ -1,6 +1,6 @@
 {
-  "appId": "com.example.activityai",
-  "appName": "ActivityAI-TS",
+  "appId": "activity.ai.ts",
+  "appName": "activity-ai-ts",
   "webDir": "dist",
   "bundledWebRuntime": false
 }
