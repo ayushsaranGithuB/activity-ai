@@ -4,14 +4,31 @@ import { dbQuery } from "@/agent/tools";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Pencil,
+  Trash,
+} from "lucide-react";
 import { sample_activities } from "@/components/dummyData/sample-activities";
 import { ActivityLogItem } from "@/types";
+import clsx from "clsx";
 
 // Use ActivityLogItem type from types
 
 const Logs: React.FC = () => {
+  const [activeActivityId, setActiveActivityId] = useState<number | null>(null);
   const [activities, setActivities] = useState<ActivityLogItem[]>([]);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editActivity, setEditActivity] = useState<ActivityLogItem | null>(
+    null
+  );
+  const [editDescription, setEditDescription] = useState("");
+  const [editTimestamp, setEditTimestamp] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteActivityId, setDeleteActivityId] = useState<number | null>(null);
   // Fetch activities on mount
   useEffect(() => {
     async function fetchActivities() {
@@ -110,24 +127,173 @@ const Logs: React.FC = () => {
                 {dateActivities.map((activity) => (
                   <div
                     key={activity.id}
-                    className="flex items-center justify-between my-6 bg-card hover:bg-muted/50 transition-colors"
+                    className={clsx(
+                      `flex flex-col my-6 bg-card hover:bg-muted/50 transition-colors cursor-pointer rounded-lg p-4`,
+                      activeActivityId === activity.id && "bg-white/10"
+                    )}
+                    onClick={() => setActiveActivityId(activity.id)}
                   >
-                    <div className="flex-1">
-                      <p className="font-medium">{activity.description}</p>
-                      {activity.category && (
-                        <Badge variant="outline" className="mt-1 opacity-50">
-                          {activity.category}
-                        </Badge>
-                      )}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium">{activity.description}</p>
+                        {activity.category && (
+                          <Badge variant="outline" className="mt-1 opacity-50">
+                            {activity.category}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {new Date(activity.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(activity.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
+                    {activeActivityId === activity.id && (
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditActivity(activity);
+                            setEditDescription(activity.description);
+                            setEditTimestamp(activity.timestamp);
+                            setEditModalOpen(true);
+                          }}
+                        >
+                          <Pencil />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteActivityId(activity.id);
+                            setDeleteConfirmOpen(true);
+                          }}
+                        >
+                          <Trash />
+                          Delete
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
+                {/* Edit Modal */}
+                {editModalOpen && editActivity && (
+                  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                    <div className="bg-black p-6 rounded shadow-lg min-w-[320px]">
+                      <h3 className="text-lg font-bold mb-4">Edit Activity</h3>
+                      <label className="block mb-2">Description:</label>
+                      <input
+                        type="text"
+                        className="w-full border px-2 py-1 mb-4"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                      />
+                      <label className="block mb-2">Time:</label>
+                      <input
+                        type="datetime-local"
+                        className="w-full border px-2 py-1 mb-4"
+                        value={(() => {
+                          // Convert UTC ISO string to local datetime-local format
+                          const d = new Date(editTimestamp);
+                          const pad = (n: number) =>
+                            n.toString().padStart(2, "0");
+                          const yyyy = d.getFullYear();
+                          const mm = pad(d.getMonth() + 1);
+                          const dd = pad(d.getDate());
+                          const hh = pad(d.getHours());
+                          const min = pad(d.getMinutes());
+                          return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+                        })()}
+                        onChange={(e) => {
+                          // Get local time from input and convert to ISO string
+                          const local = new Date(e.target.value);
+                          setEditTimestamp(local.toISOString());
+                        }}
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setEditModalOpen(false);
+                            setEditActivity(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            // Save changes (implement dbUpdate)
+                            if (editActivity) {
+                              await dbQuery(
+                                `UPDATE activities SET description = ?, timestamp = ? WHERE id = ?`,
+                                [
+                                  editDescription,
+                                  editTimestamp,
+                                  editActivity.id,
+                                ]
+                              );
+                              setEditModalOpen(false);
+                              setEditActivity(null);
+                              // Refresh activities
+                              const rows = await dbQuery(
+                                "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
+                              );
+                              setActivities(rows);
+                            }
+                          }}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Delete Confirmation */}
+                {deleteConfirmOpen && (
+                  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                    <div className="bg-black p-6 rounded shadow-lg min-w-[320px]">
+                      <h3 className="text-lg font-bold mb-4">
+                        Delete Activity?
+                      </h3>
+                      <p className="mb-4">
+                        Are you sure you want to delete this activity?
+                      </p>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          onClick={() => setDeleteConfirmOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={async () => {
+                            if (deleteActivityId != null) {
+                              await dbQuery(
+                                `DELETE FROM activities WHERE id = ?`,
+                                [deleteActivityId]
+                              );
+                              setDeleteConfirmOpen(false);
+                              setDeleteActivityId(null);
+                              // Refresh activities
+                              const rows = await dbQuery(
+                                "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
+                              );
+                              setActivities(rows);
+                            }
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
