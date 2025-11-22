@@ -8,7 +8,11 @@ import LogItem from "@/components/logs/LogItem";
 import EditModal from "@/components/logs/EditModal";
 import DeleteConfirmModal from "@/components/logs/DeleteConfirmModal";
 import { groupActivitiesByDate } from "@/utils/logs";
-import { fetchActivities, updateActivity, deleteActivity } from "@/lib/logsActions";
+import {
+  fetchActivities,
+  updateActivity,
+  deleteActivity,
+} from "@/lib/logsActions";
 
 const Logs: React.FC = () => {
   const [activeActivityId, setActiveActivityId] = useState<number | null>(null);
@@ -102,7 +106,9 @@ const Logs: React.FC = () => {
                     // Convert local datetime-local to ISO string
                     const local = new Date(val);
                     setEditTimestamp(val);
-                    setEditActivity((prev) => prev ? { ...prev, timestamp: local.toISOString() } : prev);
+                    setEditActivity((prev) =>
+                      prev ? { ...prev, timestamp: local.toISOString() } : prev
+                    );
                   }}
                   onCancel={() => {
                     setEditModalOpen(false);
@@ -110,7 +116,11 @@ const Logs: React.FC = () => {
                   }}
                   onSave={async () => {
                     if (editActivity) {
-                      await updateActivity(editActivity.id, editDescription, editActivity.timestamp);
+                      await updateActivity(
+                        editActivity.id,
+                        editDescription,
+                        editActivity.timestamp
+                      );
                       setEditModalOpen(false);
                       setEditActivity(null);
                       const acts = await fetchActivities();

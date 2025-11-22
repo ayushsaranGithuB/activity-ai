@@ -43,9 +43,7 @@ const EditModal: React.FC<EditModalProps> = ({
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button onClick={onSave}>
-            Save
-          </Button>
+          <Button onClick={onSave}>Save</Button>
         </div>
       </div>
     </div>

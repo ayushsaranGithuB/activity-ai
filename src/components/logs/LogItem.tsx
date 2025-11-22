@@ -45,11 +45,24 @@ const LogItem: React.FC<LogItemProps> = ({
     </div>
     {active && (
       <div className="flex gap-2 mt-4">
-        <Button size="sm" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+        <Button
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+        >
           <Pencil />
           Edit
         </Button>
-        <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
           <Trash />
           Delete
         </Button>
