@@ -62,8 +62,17 @@ export async function dbInsert(table: string, data: Record<string, unknown>) {
     const placeholders = Object.keys(data).map(() => '?').join(', ');
     const values = Object.values(data);
     const sql = `INSERT INTO ${table} (${columns}) VALUES (${placeholders})`;
+    // Run the insert
     await db.run(sql, values);
-    return { success: true };
+
+    // Try to get the last inserted row id from the connection
+    try {
+        const res = await db.query('SELECT last_insert_rowid() as id');
+        const id = res.values?.[0]?.id;
+        return { success: true, id };
+    } catch (e) {
+        return { success: true };
+    }
 }
 
 export async function dbQuery(sql: string, params?: unknown[]) {
