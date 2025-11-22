@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Calendar, Activity } from "lucide-react";
@@ -69,6 +69,7 @@ const Trends: React.FC = () => {
   const [todayTrends, setTodayTrends] = useState<TrendData[]>([]);
   const [weekTrends, setWeekTrends] = useState<TrendData[]>([]);
   const [monthTrends, setMonthTrends] = useState<TrendData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const computeTrends = useCallback(
     (
@@ -124,29 +125,59 @@ const Trends: React.FC = () => {
     []
   );
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useLayoutEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      // TODO: Load from SQLite with proper trend computation
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTodayTrends([]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setWeekTrends([]);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMonthTrends([]);
-    } else {
-      // Load from localStorage and compute trends
-      const activities = JSON.parse(localStorage.getItem("activities") || "[]");
-      const categories = JSON.parse(localStorage.getItem("categories") || "[]");
-
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTodayTrends(computeTrends(activities, categories, "today"));
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setWeekTrends(computeTrends(activities, categories, "week"));
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMonthTrends(computeTrends(activities, categories, "month"));
+  useEffect(() => {
+    async function loadTrends() {
+      setLoading(true);
+      try {
+        let activities = [];
+        let categories = [];
+        if (Capacitor.isNativePlatform()) {
+          const activityRows = await import("@/agent/tools").then((m) =>
+            m.dbQuery(
+              "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
+            )
+          );
+          const categoryRows = await import("@/agent/tools").then((m) =>
+            m.dbQuery("SELECT id, name FROM categories ORDER BY id ASC")
+          );
+          activities = activityRows;
+          categories = categoryRows;
+        } else {
+          // Web: use dummy data
+          activities = (
+            await import("@/components/dummyData/sample-activities")
+          ).sample_activities;
+          categories = [
+            { id: 1, name: "Exercise" },
+            { id: 2, name: "Meals" },
+            { id: 3, name: "Work" },
+            { id: 4, name: "Learning" },
+            { id: 5, name: "Entertainment" },
+            { id: 6, name: "Household" },
+            { id: 7, name: "Social" },
+            { id: 8, name: "Health" },
+          ];
+        }
+        setTodayTrends(computeTrends(activities, categories, "today"));
+        setWeekTrends(computeTrends(activities, categories, "week"));
+        setMonthTrends(computeTrends(activities, categories, "month"));
+      } catch (err) {
+        console.error("Failed to load trends:", err);
+      }
+      setLoading(false);
     }
+    loadTrends();
   }, [computeTrends]);
+
+  if (loading) {
+    return (
+      <div className="container py-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Loading... </h1>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-6 space-y-6">

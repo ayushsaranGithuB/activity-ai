@@ -1,3 +1,11 @@
+// Activity log item for frontend logs
+export interface ActivityLogItem {
+    id: number;
+    description: string;
+    category_id?: number;
+    timestamp: string;
+    category?: string;
+}
 // Activity AI - Type Definitions
 
 // ============================================================================

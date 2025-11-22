@@ -1,86 +1,49 @@
-import React, { useState, useLayoutEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
+import { dbQuery } from "@/agent/tools";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, Filter } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { sample_activities } from "@/components/dummyData/sample-activities";
+import { ActivityLogItem } from "@/types";
 
-interface Activity {
-  id: number;
-  description: string;
-  category_id?: number;
-  timestamp: string;
-  category?: string;
-}
+// Use ActivityLogItem type from types
 
 const Logs: React.FC = () => {
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<ActivityLogItem[]>([]);
+  // Fetch activities on mount
+  useEffect(() => {
+    async function fetchActivities() {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const rows = await dbQuery(
+            "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
+          );
+          // Map rows to Activity type
+          const mapped: ActivityLogItem[] = rows.map((a: ActivityLogItem) => ({
+            id: a.id,
+            description: a.description,
+            category_id: a.category_id,
+            timestamp: a.timestamp,
+            category: undefined, // You can join category name if needed
+          }));
+          setActivities(mapped);
+        } catch (err) {
+          console.error("Failed to fetch activities from SQLite:", err);
+        }
+      } else {
+        // Web: use dummy data for testing
+        setActivities([...sample_activities]);
+      }
+    }
+    fetchActivities();
+  }, []);
   const [currentPage, setCurrentPage] = useState(1);
-  const [dateRange, setDateRange] = useState<
-    "today" | "week" | "month" | "all"
-  >("week");
   const itemsPerPage = 20;
 
-  const filterActivitiesByDate = useCallback(
-    (activities: Activity[]) => {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      switch (dateRange) {
-        case "today":
-          return activities.filter((activity) => {
-            const activityDate = new Date(activity.timestamp);
-            return activityDate >= today;
-          });
-        case "week": {
-          const weekAgo = new Date(today);
-          weekAgo.setDate(today.getDate() - 7);
-          return activities.filter((activity) => {
-            const activityDate = new Date(activity.timestamp);
-            return activityDate >= weekAgo;
-          });
-        }
-        case "month": {
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(today.getMonth() - 1);
-          return activities.filter((activity) => {
-            const activityDate = new Date(activity.timestamp);
-            return activityDate >= monthAgo;
-          });
-        }
-        default:
-          return activities;
-      }
-    },
-    [dateRange]
-  );
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useLayoutEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      // TODO: Load from SQLite
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActivities([]);
-    } else {
-      // Load from localStorage
-      const storedActivities = JSON.parse(
-        localStorage.getItem("activities") || "[]"
-      );
-      const filteredActivities = filterActivitiesByDate(storedActivities);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActivities(filteredActivities.reverse()); // Most recent first
-    }
-  }, [filterActivitiesByDate]);
-
-  const groupActivitiesByDate = (activities: Activity[]) => {
-    const groups: { [key: string]: Activity[] } = {};
+  const groupActivitiesByDate = (activities: ActivityLogItem[]) => {
+    const groups: { [key: string]: ActivityLogItem[] } = {};
 
     activities.forEach((activity) => {
       const date = new Date(activity.timestamp);
@@ -125,26 +88,6 @@ const Logs: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">Activity Logs</h1>
           <p className="text-muted-foreground">View your logged activities</p>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select
-            value={dateRange}
-            onValueChange={(value: "today" | "week" | "month" | "all") =>
-              setDateRange(value)
-            }
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="all">All Time</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

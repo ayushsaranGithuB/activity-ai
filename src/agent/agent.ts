@@ -238,35 +238,8 @@ Details: "${details}"
 async function logActivity(description: string, categoryName?: string): Promise<number | undefined> {
     try {
         if (!Capacitor.isNativePlatform()) {
-            const activities = JSON.parse(localStorage.getItem('activities') || '[]');
-            const categories = JSON.parse(localStorage.getItem('categories') || '[]');
-
-            let categoryId = undefined;
-            if (categoryName) {
-                let existing = categories.find((c: any) => c.name === categoryName);
-                if (!existing) {
-                    existing = {
-                        id: Date.now(),
-                        name: categoryName,
-                        description: `Activities related to ${categoryName.toLowerCase()}`,
-                        created_at: new Date().toISOString()
-                    };
-                    categories.push(existing);
-                    localStorage.setItem('categories', JSON.stringify(categories));
-                }
-                categoryId = existing.id;
-            }
-
-            const newActivity = {
-                id: Date.now(),
-                description,
-                category_id: categoryId,
-                timestamp: new Date().toISOString()
-            };
-            activities.push(newActivity);
-            localStorage.setItem('activities', JSON.stringify(activities));
-
-            return newActivity.id;
+            // Web: do not log activities, just return a dummy id
+            return Date.now();
         }
 
         // Native (SQLite)
