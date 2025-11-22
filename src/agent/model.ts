@@ -4,7 +4,7 @@ const genAI = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || '
 
 export interface ToolCall {
     name: string;
-    arguments: Record<string, unknown>;
+    arguments: Record<string, any>;
 }
 
 export interface ModelResponse {
