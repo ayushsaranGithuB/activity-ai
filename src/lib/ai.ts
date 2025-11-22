@@ -1,6 +1,6 @@
 // Gemini AI Service
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from '@google/genai';
 
 let genAI: GoogleGenAI | null = null;
 
@@ -27,33 +27,20 @@ export async function generateContent(
         throw new Error("AI not initialized. Call initializeAI() first.");
     }
 
-    const defaultConfig = {
+    const result = await genAI.models.generateContent({
         model: "gemini-2.5-flash-lite",
-        contents: prompt,
+        contents: [{ role: "user", parts: [{ text: typeof prompt === "string" ? prompt : JSON.stringify(prompt) }] }],
         config: {
             temperature: 0.3,
             maxOutputTokens: 100,
             responseMimeType: "application/json",
             ...config,
         },
-    };
-
-    console.log("🤖 Gemini API Request:");
-    console.log("Model:", defaultConfig.model);
-    console.log("Temperature:", defaultConfig.config.temperature);
-    console.log("MaxOutputTokens:", defaultConfig.config.maxOutputTokens);
-    if (typeof prompt === "string") {
-        console.log("Prompt:", prompt);
-    } else {
-        console.log("Prompt Object:", JSON.stringify(prompt, null, 2));
-    }
-    console.log("Full Config:", JSON.stringify(defaultConfig, null, 2));
-
-    const result = await genAI.models.generateContent(defaultConfig);
+    });
     console.log("✅ Gemini API Raw Response:", JSON.stringify(result, null, 2));
     let text = "";
-    if (result && result.candidates && Array.isArray(result.candidates) && result.candidates[0]?.content?.parts?.[0]?.text) {
-        text = result.candidates[0].content.parts[0].text;
+    if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0]) {
+        text = result.candidates[0].content.parts[0].text || "";
     } else {
         console.warn("Gemini response did not contain usable text. Full result:", result);
         text = JSON.stringify({ raw: result });
@@ -78,28 +65,21 @@ export async function generateAISummary(
         throw new Error("AI not initialized. Call initializeAI() first.");
     }
 
-    const defaultConfig = {
+    const result = await genAI.models.generateContent({
         model: "gemini-2.5-flash-lite",
-        contents: prompt,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
             temperature: 0.8,
             maxOutputTokens: 200,
             responseMimeType: "text/plain",
             ...config,
         },
-    };
-
-    console.log("🤖 Gemini API Request (Summary):", {
-        model: defaultConfig.model,
-        temperature: defaultConfig.config.temperature,
-        maxOutputTokens: defaultConfig.config.maxOutputTokens,
     });
 
-    const result = await genAI.models.generateContent(defaultConfig);
     console.log("✅ Gemini API Raw Response (Summary):", JSON.stringify(result, null, 2));
     let text = "";
-    if (result && result.candidates && Array.isArray(result.candidates) && result.candidates[0]?.content?.parts?.[0]?.text) {
-        text = result.candidates[0].content.parts[0].text;
+    if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0]) {
+        text = result.candidates[0].content.parts[0].text || "";
     } else {
         console.warn("Gemini response did not contain usable text. Full result:", result);
         text = JSON.stringify({ raw: result });
