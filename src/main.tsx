@@ -12,11 +12,17 @@ initializeAI(GEMINI_API_KEY);
 
 // Add keyboard listeners for better mobile experience
 Keyboard.addListener("keyboardWillShow", () => {
-  document.body.classList.add("keyboard-open");
+  const inputSection = document.querySelector(".input-section") as HTMLElement;
+  if (inputSection) {
+    inputSection.style.bottom = "60px";
+  }
 });
 
 Keyboard.addListener("keyboardWillHide", () => {
-  document.body.classList.remove("keyboard-open");
+  const inputSection = document.querySelector(".input-section") as HTMLElement;
+  if (inputSection) {
+    inputSection.style.bottom = "0";
+  }
 });
 
 // Optional: Set resize mode (commented out as adjustResize in manifest handles it)
