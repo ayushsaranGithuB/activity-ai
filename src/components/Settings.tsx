@@ -100,67 +100,28 @@ export default function Settings() {
       );
 
       for (const activity of generalActivities) {
-        const { CATEGORIZE_PROMPT } = await import(
-          "../prompts/categorizePrompt"
-        );
-        const prompt = CATEGORIZE_PROMPT(activity.text, goodCategories, true);
-        const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "";
-        if (!apiKey) throw new Error("Gemini API key not set");
-        const response = await fetch(
-          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=" +
-            apiKey,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ role: "user", parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.3,
-                maxOutputTokens: 100,
-                responseMimeType: "application/json",
-              },
-            }),
-          }
-        );
-        const llmData = await response.json();
-        let newCategory = goodCategories[0] || "General";
         try {
-          const result = JSON.parse(
-            llmData.candidates?.[0]?.content?.parts?.[0]?.text || "{}"
-          );
-          if (
-            result.subcategory &&
-            goodCategories.includes(result.subcategory)
-          ) {
-            newCategory = result.subcategory;
-          }
-        } catch {
-          // fallback to default
-        }
-        try {
-          // Build Gemini prompt
           const { CATEGORIZE_PROMPT } = await import(
             "../prompts/categorizePrompt"
           );
           const prompt = CATEGORIZE_PROMPT(activity.text, goodCategories, true);
-          // Use centralized Gemini LLM function
-          const llmResponse = await import("../lib/ai").then((mod) =>
-            mod.generateContent(prompt, {
-              temperature: 0.3,
-              maxOutputTokens: 100,
-              responseMimeType: "application/json",
-            })
-          );
-          // Use newCategory from above
+          const { generateContent } = await import("../lib/ai");
+          const responseText = await generateContent(prompt, {
+            temperature: 0.3,
+            maxOutputTokens: 100,
+            responseMimeType: "application/json",
+          });
+          let newCategory = goodCategories[0] || "General";
           try {
-            const result = JSON.parse(llmResponse);
+            const result = JSON.parse(responseText);
             if (
               result.subcategory &&
               goodCategories.includes(result.subcategory)
             ) {
               newCategory = result.subcategory;
             }
-          } catch {
+          } catch (parseErr) {
+            console.warn("Failed to parse LLM response:", parseErr);
             // fallback to default
           }
 
@@ -202,16 +163,14 @@ export default function Settings() {
             }
 
             updated++;
-            console.log(
-              `705 "${activity.text}" 192 ${oldCategory} 192 ${newCategory}`
-            );
+            console.log(`✓ "${activity.text}" ${oldCategory} → ${newCategory}`);
           }
-
-          await new Promise((resolve) => setTimeout(resolve, 100));
         } catch (err) {
           console.error(`Failed to recategorize activity:`, err);
           failed++;
         }
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       console.log(
