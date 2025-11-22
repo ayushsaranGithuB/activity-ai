@@ -4,7 +4,7 @@ import { dbQuery } from "@/agent/tools";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { sample_activities } from "@/components/dummyData/sample-activities";
 import { ActivityLogItem } from "@/types";
 
@@ -86,15 +86,17 @@ const Logs: React.FC = () => {
     <div className="container py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Activity Logs</h1>
-          <p className="text-muted-foreground">View your logged activities</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <FileText />
+            Log
+          </h1>
         </div>
       </div>
 
       <div className="space-y-6">
         {Object.entries(groupedActivities).map(([date, dateActivities]) => (
           <Card key={date}>
-            <CardHeader>
+            <CardHeader className="p-1">
               <CardTitle className="flex items-center space-x-2">
                 <Calendar className="h-5 w-5" />
                 <span>{date}</span>
@@ -103,17 +105,17 @@ const Logs: React.FC = () => {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2">
               <div className="space-y-3">
                 {dateActivities.map((activity) => (
                   <div
                     key={activity.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between my-6 bg-card hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex-1">
                       <p className="font-medium">{activity.description}</p>
                       {activity.category && (
-                        <Badge variant="outline" className="mt-1">
+                        <Badge variant="outline" className="mt-1 opacity-50">
                           {activity.category}
                         </Badge>
                       )}
