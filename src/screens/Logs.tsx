@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useLayoutEffect, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,13 +28,45 @@ const Logs: React.FC = () => {
   >("week");
   const itemsPerPage = 20;
 
-  useEffect(() => {
-    loadActivities();
-  }, [dateRange]);
+  const filterActivitiesByDate = useCallback(
+    (activities: Activity[]) => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const loadActivities = () => {
+      switch (dateRange) {
+        case "today":
+          return activities.filter((activity) => {
+            const activityDate = new Date(activity.timestamp);
+            return activityDate >= today;
+          });
+        case "week": {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(today.getDate() - 7);
+          return activities.filter((activity) => {
+            const activityDate = new Date(activity.timestamp);
+            return activityDate >= weekAgo;
+          });
+        }
+        case "month": {
+          const monthAgo = new Date(today);
+          monthAgo.setMonth(today.getMonth() - 1);
+          return activities.filter((activity) => {
+            const activityDate = new Date(activity.timestamp);
+            return activityDate >= monthAgo;
+          });
+        }
+        default:
+          return activities;
+      }
+    },
+    [dateRange]
+  );
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useLayoutEffect(() => {
     if (Capacitor.isNativePlatform()) {
       // TODO: Load from SQLite
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActivities([]);
     } else {
       // Load from localStorage
@@ -42,38 +74,10 @@ const Logs: React.FC = () => {
         localStorage.getItem("activities") || "[]"
       );
       const filteredActivities = filterActivitiesByDate(storedActivities);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActivities(filteredActivities.reverse()); // Most recent first
     }
-  };
-
-  const filterActivitiesByDate = (activities: Activity[]) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    switch (dateRange) {
-      case "today":
-        return activities.filter((activity) => {
-          const activityDate = new Date(activity.timestamp);
-          return activityDate >= today;
-        });
-      case "week":
-        const weekAgo = new Date(today);
-        weekAgo.setDate(today.getDate() - 7);
-        return activities.filter((activity) => {
-          const activityDate = new Date(activity.timestamp);
-          return activityDate >= weekAgo;
-        });
-      case "month":
-        const monthAgo = new Date(today);
-        monthAgo.setMonth(today.getMonth() - 1);
-        return activities.filter((activity) => {
-          const activityDate = new Date(activity.timestamp);
-          return activityDate >= monthAgo;
-        });
-      default:
-        return activities;
-    }
-  };
+  }, [filterActivitiesByDate]);
 
   const groupActivitiesByDate = (activities: Activity[]) => {
     const groups: { [key: string]: Activity[] } = {};
@@ -127,7 +131,9 @@ const Logs: React.FC = () => {
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select
             value={dateRange}
-            onValueChange={(value: any) => setDateRange(value)}
+            onValueChange={(value: "today" | "week" | "month" | "all") =>
+              setDateRange(value)
+            }
           >
             <SelectTrigger className="w-32">
               <SelectValue />

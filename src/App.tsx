@@ -6,7 +6,6 @@ import Settings from "@/screens/Settings";
 import { Toaster } from "react-hot-toast";
 import {
   Menu,
-  X,
   Home,
   FileText,
   TrendingUp,

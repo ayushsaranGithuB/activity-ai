@@ -8,6 +8,11 @@ export interface AgentResponse {
     content: string;
 }
 
+interface CategoryResult {
+    broadCategory?: string;
+    subcategory?: string;
+}
+
 let isInitialized = false;
 let conversationContext: { type: 'activity_followup'; activity: string; category?: string; logged?: boolean; activityId?: number } | null = null;
 
@@ -31,9 +36,10 @@ async function detectActivity(message: string): Promise<{ description: string; c
         try {
             const rows = await dbQuery('SELECT name FROM categories');
             if (rows && Array.isArray(rows)) {
-                existingCategories = rows.map((r: any) => r.name).filter(Boolean);
+                existingCategories = rows.map((r: { name?: string }) => r.name).filter(Boolean);
             }
         } catch (e) {
+            console.error('Error fetching categories:', e);
             // ignore DB errors, we'll pass empty list
             existingCategories = [];
         }
@@ -75,11 +81,9 @@ async function detectActivity(message: string): Promise<{ description: string; c
     }
 
     return null;
-
-    return null;
 }
 
-async function askFollowupQuestion(activity: string, broadCategory?: string, subcategory?: string): Promise<string> {
+async function askFollowupQuestion(activity: string, _broadCategory?: string, _subcategory?: string): Promise<string> {
     const prompt = `You're a friendly assistant. The user said: "${activity}". \nAsk one short, casual follow-up question that feels natural.\nIt should sound curious, friendly, and human — not robotic.\nReturn only the question.`;
     try {
         const resp = await callModel(prompt, [{ role: 'user', content: activity }], toolDefinitions);
@@ -91,7 +95,7 @@ async function askFollowupQuestion(activity: string, broadCategory?: string, sub
 }
 
 // Wrapper: call model and expect JSON output; retry once with a stricter instruction if parsing fails
-async function callModelExpectJson(prompt: string, userContent: string, retries = 1): Promise<any | null> {
+async function callModelExpectJson(prompt: string, userContent: string, retries = 1): Promise<CategoryResult | null> {
     try {
         const resp = await callModel(prompt, [{ role: 'user', content: userContent }], toolDefinitions);
         const text = (resp && resp.content) ? resp.content.trim() : '';
@@ -99,10 +103,11 @@ async function callModelExpectJson(prompt: string, userContent: string, retries 
         try {
             return JSON.parse(text);
         } catch (e) {
+            console.error('JSON parse error:', e);
             // try extract JSON substring
             const match = text.match(/\{[\s\S]*\}/);
             if (match) {
-                try { return JSON.parse(match[0]); } catch (e) { /* fallthrough */ }
+                try { return JSON.parse(match[0]); } catch (e) { console.error('JSON substring parse error:', e); /* fallthrough */ }
             }
         }
         // Retry once with strict JSON instruction
@@ -130,6 +135,7 @@ async function handleFollowupConversation(userMessage: string): Promise<AgentRes
             // Update existing activity description
             await dbUpdate('activities', { description: fullActivity }, { id: conversationContext.activityId });
         } catch (e) {
+            console.error('Error updating activity:', e);
             // Fallback: insert if update fails
             await logActivity(fullActivity, conversationContext.category);
         }
@@ -222,8 +228,9 @@ async function guessCategory(description: string): Promise<string | undefined> {
         let existingCategories: string[] = [];
         try {
             const rows = await dbQuery('SELECT name FROM categories');
-            if (rows && Array.isArray(rows)) existingCategories = rows.map((r: any) => r.name).filter(Boolean);
+            if (rows && Array.isArray(rows)) existingCategories = rows.map((r: Record<string, unknown>) => (r as { name: string }).name).filter(Boolean);
         } catch (e) {
+            console.error('Error fetching categories for guessCategory:', e);
             existingCategories = [];
         }
         const categorizePrompt = CATEGORIZE_PROMPT(description, existingCategories, true);
@@ -269,7 +276,7 @@ async function logActivity(description: string, categoryName?: string): Promise<
             let categoryId = undefined;
             if (categoryName) {
                 // Try to find existing category
-                const existingCategory = categories.find((c: any) => c.name === categoryName);
+                const existingCategory = categories.find((c: { id: number; name: string }) => c.name === categoryName);
                 if (existingCategory) {
                     categoryId = existingCategory.id;
                 } else {
@@ -305,15 +312,16 @@ async function logActivity(description: string, categoryName?: string): Promise<
             // Try to find existing category
             const existingCategories = await dbQuery('SELECT id FROM categories WHERE name = ?', [categoryName]);
             if (existingCategories && existingCategories.length > 0) {
-                categoryId = existingCategories[0].id;
+                const row = existingCategories[0] as Record<string, unknown>;
+                categoryId = row.id as number;
             } else {
                 // Create new category
                 const result = await dbInsert('categories', {
                     name: categoryName,
                     description: `Activities related to ${categoryName.toLowerCase()}`
                 });
-                if (result && (result as any).id) {
-                    categoryId = (result as any).id;
+                if (result && (result as { id?: number }).id) {
+                    categoryId = (result as { id?: number }).id;
                 } else {
                     // Fallback: query the category id
                     const newCategories = await dbQuery('SELECT id FROM categories WHERE name = ?', [categoryName]);
@@ -329,8 +337,8 @@ async function logActivity(description: string, categoryName?: string): Promise<
             description,
             category_id: categoryId
         });
-        if (insertResult && (insertResult as any).id) {
-            return (insertResult as any).id;
+        if (insertResult && (insertResult as { id?: number }).id) {
+            return (insertResult as { id?: number }).id;
         }
     } catch (error) {
         console.error('Error logging activity:', error);
@@ -398,7 +406,7 @@ export async function processMessage(userMessage: string): Promise<AgentResponse
 
         if (response.toolCalls && response.toolCalls.length > 0) {
             for (const toolCall of response.toolCalls) {
-                let result;
+                let result: unknown;
                 switch (toolCall.name) {
                     case 'dbInsert':
                         result = await dbInsert(toolCall.arguments.table as string, toolCall.arguments.data as Record<string, unknown>);
@@ -438,7 +446,8 @@ export async function processMessage(userMessage: string): Promise<AgentResponse
     try {
         finalResponse = await styleResponse(finalResponse);
     } catch (e) {
-        // ignore styling failures and fallback to original
+        console.error('Error styling response:', e);
+        return raw; // fallback
     }
 
     // Save messages
@@ -479,7 +488,8 @@ Message to rewrite:
         const resp = await callModel(stylePrompt, [{ role: 'assistant', content: raw }], toolDefinitions);
         const text = resp?.content?.trim();
         return text || raw;
-    } catch (e) {
+    } catch (error) {
+        console.error('Error styling response:', error);
         return raw; // fallback
     }
 }

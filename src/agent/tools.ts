@@ -71,6 +71,7 @@ export async function dbInsert(table: string, data: Record<string, unknown>) {
         const id = res.values?.[0]?.id;
         return { success: true, id };
     } catch (e) {
+        console.error('Error getting last insert id:', e);
         return { success: true };
     }
 }

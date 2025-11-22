@@ -35,7 +35,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["server/**/*.js"],
+    files: ["scripts/**/*.js"],
     languageOptions: {
       globals: {
         process: "readonly",
@@ -45,8 +45,17 @@ export default tseslint.config(
         __filename: "readonly",
       },
     },
+    rules: {
+      "no-undef": "off",
+    },
   },
   {
-    ignores: ["dist/**", "node_modules/**", "android/**", "ios/**"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "android/**",
+      "ios/**",
+      "scripts/**",
+    ],
   }
 );

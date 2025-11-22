@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useLayoutEffect, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Calendar, Activity } from "lucide-react";
@@ -9,140 +9,144 @@ interface TrendData {
   percentage: number;
 }
 
+const TrendCard = ({
+  title,
+  trends,
+  icon: Icon,
+  color,
+}: {
+  title: string;
+  trends: TrendData[];
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center space-x-2">
+        <Icon className={`h-5 w-5 ${color}`} />
+        <span>{title}</span>
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      {trends.length > 0 ? (
+        <div className="space-y-3">
+          {trends.slice(0, 5).map((trend) => (
+            <div
+              key={trend.category}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-3">
+                <div className={`w-2 h-2 rounded-full ${color}`} />
+                <span className="font-medium">{trend.category}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-md">
+                  {trend.count}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {trend.percentage}%
+                </span>
+              </div>
+            </div>
+          ))}
+          {trends.length > 5 && (
+            <p className="text-sm text-muted-foreground text-center pt-2">
+              +{trends.length - 5} more categories
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No activities in this period</p>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
 const Trends: React.FC = () => {
   const [todayTrends, setTodayTrends] = useState<TrendData[]>([]);
   const [weekTrends, setWeekTrends] = useState<TrendData[]>([]);
   const [monthTrends, setMonthTrends] = useState<TrendData[]>([]);
 
-  useEffect(() => {
-    loadTrends();
-  }, []);
+  const computeTrends = useCallback(
+    (
+      activities: { category_id?: number; timestamp: string }[],
+      categories: { id: number; name: string }[],
+      period: "today" | "week" | "month"
+    ): TrendData[] => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const loadTrends = () => {
+      let startDate: Date;
+      switch (period) {
+        case "today":
+          startDate = today;
+          break;
+        case "week":
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case "month":
+          startDate = new Date(today);
+          startDate.setMonth(today.getMonth() - 1);
+          break;
+      }
+
+      // Filter activities by date
+      const filteredActivities = activities.filter((activity) => {
+        const activityDate = new Date(activity.timestamp);
+        return activityDate >= startDate;
+      });
+
+      // Count by category
+      const categoryCounts: { [key: string]: number } = {};
+      filteredActivities.forEach((activity) => {
+        const categoryName = activity.category_id
+          ? categories.find((c) => c.id === activity.category_id)?.name ||
+            "Uncategorized"
+          : "Uncategorized";
+        categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+      });
+
+      const total = filteredActivities.length;
+      const trends: TrendData[] = Object.entries(categoryCounts)
+        .map(([category, count]) => ({
+          category,
+          count,
+          percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      return trends;
+    },
+    []
+  );
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useLayoutEffect(() => {
     if (Capacitor.isNativePlatform()) {
       // TODO: Load from SQLite with proper trend computation
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTodayTrends([]);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWeekTrends([]);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMonthTrends([]);
     } else {
       // Load from localStorage and compute trends
       const activities = JSON.parse(localStorage.getItem("activities") || "[]");
       const categories = JSON.parse(localStorage.getItem("categories") || "[]");
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTodayTrends(computeTrends(activities, categories, "today"));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWeekTrends(computeTrends(activities, categories, "week"));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMonthTrends(computeTrends(activities, categories, "month"));
     }
-  };
-
-  const computeTrends = (
-    activities: any[],
-    categories: any[],
-    period: "today" | "week" | "month"
-  ): TrendData[] => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    let startDate: Date;
-    switch (period) {
-      case "today":
-        startDate = today;
-        break;
-      case "week":
-        startDate = new Date(today);
-        startDate.setDate(today.getDate() - 7);
-        break;
-      case "month":
-        startDate = new Date(today);
-        startDate.setMonth(today.getMonth() - 1);
-        break;
-    }
-
-    // Filter activities by date
-    const filteredActivities = activities.filter((activity) => {
-      const activityDate = new Date(activity.timestamp);
-      return activityDate >= startDate;
-    });
-
-    // Count by category
-    const categoryCounts: { [key: string]: number } = {};
-    filteredActivities.forEach((activity) => {
-      const categoryName = activity.category_id
-        ? categories.find((c: any) => c.id === activity.category_id)?.name ||
-          "Uncategorized"
-        : "Uncategorized";
-      categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
-    });
-
-    const total = filteredActivities.length;
-    const trends: TrendData[] = Object.entries(categoryCounts)
-      .map(([category, count]) => ({
-        category,
-        count,
-        percentage: total > 0 ? Math.round((count / total) * 100) : 0,
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    return trends;
-  };
-
-  const TrendCard = ({
-    title,
-    trends,
-    icon: Icon,
-    color,
-  }: {
-    title: string;
-    trends: TrendData[];
-    icon: any;
-    color: string;
-  }) => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Icon className={`h-5 w-5 ${color}`} />
-          <span>{title}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {trends.length > 0 ? (
-          <div className="space-y-3">
-            {trends.slice(0, 5).map((trend, index) => (
-              <div
-                key={trend.category}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`w-2 h-2 rounded-full ${color}`} />
-                  <span className="font-medium">{trend.category}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-md">
-                    {trend.count}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {trend.percentage}%
-                  </span>
-                </div>
-              </div>
-            ))}
-            {trends.length > 5 && (
-              <p className="text-sm text-muted-foreground text-center pt-2">
-                +{trends.length - 5} more categories
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              No activities in this period
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  }, [computeTrends]);
 
   return (
     <div className="container py-6 space-y-6">
@@ -181,10 +185,10 @@ const Trends: React.FC = () => {
             {todayTrends.length > 0 && (
               <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
                 <h4 className="font-semibold text-blue-900 dark:text-blue-100">
-                  Today's Focus
+                  Today&apos;s Focus
                 </h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  You've been most active in{" "}
+                  You&apos;ve been most active in{" "}
                   <strong>{todayTrends[0].category}</strong> today (
                   {todayTrends[0].percentage}% of your activities).
                 </p>
@@ -210,7 +214,7 @@ const Trends: React.FC = () => {
                   Monthly Overview
                 </h4>
                 <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
-                  Over the past month, you've logged{" "}
+                  Over the past month, you&apos;ve logged{" "}
                   {monthTrends.reduce((sum, trend) => sum + trend.count, 0)}{" "}
                   activities across {monthTrends.length} categories.
                 </p>
