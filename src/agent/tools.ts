@@ -1,10 +1,16 @@
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 
 let sqlite: SQLiteConnection;
 let db: SQLiteDBConnection;
 
 export async function initDB() {
+    if (!Capacitor.isNativePlatform()) {
+        console.warn("Database initialization skipped - not running in Capacitor environment");
+        return;
+    }
+
     sqlite = new SQLiteConnection(CapacitorSQLite);
     db = await sqlite.createConnection('activity-ai', false, 'no-encryption', 1, false);
     await db.open();
@@ -48,6 +54,10 @@ INSERT OR IGNORE INTO schema_meta (version) VALUES (1);
 }
 
 export async function dbInsert(table: string, data: Record<string, unknown>) {
+    if (!Capacitor.isNativePlatform()) {
+        console.warn("Database operations not available in browser environment");
+        return { success: false, error: "Not in Capacitor environment" };
+    }
     const columns = Object.keys(data).join(', ');
     const placeholders = Object.keys(data).map(() => '?').join(', ');
     const values = Object.values(data);
@@ -57,11 +67,19 @@ export async function dbInsert(table: string, data: Record<string, unknown>) {
 }
 
 export async function dbQuery(sql: string, params?: unknown[]) {
+    if (!Capacitor.isNativePlatform()) {
+        console.warn("Database operations not available in browser environment");
+        return [];
+    }
     const result = await db.query(sql, params || []);
     return result.values;
 }
 
 export async function dbUpdate(table: string, data: Record<string, unknown>, where: Record<string, unknown>) {
+    if (!Capacitor.isNativePlatform()) {
+        console.warn("Database operations not available in browser environment");
+        return { success: false, error: "Not in Capacitor environment" };
+    }
     const setClause = Object.keys(data).map(key => `${key} = ?`).join(', ');
     const whereClause = Object.keys(where).map(key => `${key} = ?`).join(' AND ');
     const values = [...Object.values(data), ...Object.values(where)];
@@ -71,6 +89,10 @@ export async function dbUpdate(table: string, data: Record<string, unknown>, whe
 }
 
 export async function dbEnsureSchema() {
+    if (!Capacitor.isNativePlatform()) {
+        console.warn("Database operations not available in browser environment");
+        return { version: 0, error: "Not in Capacitor environment" };
+    }
     // Check current version
     const versionResult = await db.query('SELECT MAX(version) as version FROM schema_meta');
     const currentVersion = versionResult.values?.[0]?.version || 0;
@@ -84,6 +106,10 @@ export async function dbEnsureSchema() {
 }
 
 export async function trendCompute(period: 'day' | 'week' | 'month' | 'year') {
+    if (!Capacitor.isNativePlatform()) {
+        console.warn("Database operations not available in browser environment");
+        return [];
+    }
     // Implement trend computation logic
     // For example, count activities per category in the period
     const sql = `
@@ -98,6 +124,10 @@ export async function trendCompute(period: 'day' | 'week' | 'month' | 'year') {
 }
 
 export async function backupCreate() {
+    if (!Capacitor.isNativePlatform()) {
+        console.warn("Database operations not available in browser environment");
+        return { error: "Not in Capacitor environment" };
+    }
     const exportResult = await db.exportToJson('full');
     const backupData = JSON.stringify(exportResult);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -112,6 +142,10 @@ export async function backupCreate() {
 }
 
 export async function backupRestore(filename: string) {
+    if (!Capacitor.isNativePlatform()) {
+        console.warn("Database operations not available in browser environment");
+        return { error: "Not in Capacitor environment" };
+    }
     const backupFile = await Filesystem.readFile({
         path: `backups/${filename}`,
         directory: Directory.Data,
