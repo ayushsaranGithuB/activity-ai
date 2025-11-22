@@ -41,10 +41,10 @@ export default function App() {
     navigation.find((nav) => nav.id === currentScreen)?.component || Chat;
 
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased flex flex-col">
+    <div className="min-h-screen bg-background text-foreground antialiased flex flex-col w-full px-3">
       <Toaster position="bottom-right" />
 
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/50">
+      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center space-x-2">
             <button
@@ -111,7 +111,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden flex flex-col">
         <CurrentScreenComponent />
       </main>
     </div>
