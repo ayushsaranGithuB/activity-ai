@@ -9,7 +9,21 @@ dist-server/
 build/
 
 # Capacitor
-android/
+android/build/
+android/app/build/
+# Gradle files
+android/gradle/
+android/*.gradle
+android/gradle*
+android/app/*.gradle
+android/app/src/main/res/xml/
+android/app/src/main/res/values/
+android/app/src/test/
+android/app/src/AndroidTest/
+android/.gitignore
+android/app/.gitignore
+
+
 ios/
 .capacitor/
 
