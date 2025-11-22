@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Calendar, Activity } from "lucide-react";
+import { TREND_SUMMARY_PROMPT } from "@/prompts/trendSummaryPrompt";
+import { callModel } from "@/agent/model";
 
 interface TrendData {
   category: string;
@@ -69,6 +71,12 @@ const Trends: React.FC = () => {
   const [todayTrends, setTodayTrends] = useState<TrendData[]>([]);
   const [weekTrends, setWeekTrends] = useState<TrendData[]>([]);
   const [monthTrends, setMonthTrends] = useState<TrendData[]>([]);
+
+  // ✨ NEW: AI summaries
+  const [aiToday, setAiToday] = useState("");
+  const [aiWeek, setAiWeek] = useState("");
+  const [aiMonth, setAiMonth] = useState("");
+
   const [loading, setLoading] = useState(true);
 
   const computeTrends = useCallback(
@@ -95,13 +103,11 @@ const Trends: React.FC = () => {
           break;
       }
 
-      // Filter activities by date
       const filteredActivities = activities.filter((activity) => {
         const activityDate = new Date(activity.timestamp);
         return activityDate >= startDate;
       });
 
-      // Count by category
       const categoryCounts: { [key: string]: number } = {};
       filteredActivities.forEach((activity) => {
         const categoryName = activity.category_id
@@ -131,22 +137,22 @@ const Trends: React.FC = () => {
       try {
         let activities = [];
         let categories = [];
+
         if (Capacitor.isNativePlatform()) {
-          const activityRows = await import("@/agent/tools").then((m) =>
-            m.dbQuery(
-              "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
-            )
+          const tools = await import("@/agent/tools");
+
+          activities = await tools.dbQuery(
+            "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
           );
-          const categoryRows = await import("@/agent/tools").then((m) =>
-            m.dbQuery("SELECT id, name FROM categories ORDER BY id ASC")
+
+          categories = await tools.dbQuery(
+            "SELECT id, name FROM categories ORDER BY id ASC"
           );
-          activities = activityRows;
-          categories = categoryRows;
         } else {
-          // Web: use dummy data
           activities = (
             await import("@/components/dummyData/sample-activities")
           ).sample_activities;
+
           categories = [
             { id: 1, name: "Exercise" },
             { id: 2, name: "Meals" },
@@ -158,23 +164,40 @@ const Trends: React.FC = () => {
             { id: 8, name: "Health" },
           ];
         }
-        setTodayTrends(computeTrends(activities, categories, "today"));
-        setWeekTrends(computeTrends(activities, categories, "week"));
-        setMonthTrends(computeTrends(activities, categories, "month"));
+
+        const today = computeTrends(activities, categories, "today");
+        const week = computeTrends(activities, categories, "week");
+        const month = computeTrends(activities, categories, "month");
+
+        setTodayTrends(today);
+        setWeekTrends(week);
+        setMonthTrends(month);
+
+        // 🔥 Generate AI summaries
+        const todayPrompt = TREND_SUMMARY_PROMPT("today", today);
+        const weekPrompt = TREND_SUMMARY_PROMPT("this week", week);
+        const monthPrompt = TREND_SUMMARY_PROMPT("this month", month);
+
+        const todayRes = await callModel(todayPrompt, [], []);
+        const weekRes = await callModel(weekPrompt, [], []);
+        const monthRes = await callModel(monthPrompt, [], []);
+
+        setAiToday(todayRes.content);
+        setAiWeek(weekRes.content);
+        setAiMonth(monthRes.content);
       } catch (err) {
         console.error("Failed to load trends:", err);
       }
       setLoading(false);
     }
+
     loadTrends();
   }, [computeTrends]);
 
   if (loading) {
     return (
       <div className="container py-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Loading... </h1>
-        </div>
+        <h1 className="text-2xl font-bold">Loading...</h1>
       </div>
     );
   }
@@ -213,45 +236,43 @@ const Trends: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {todayTrends.length > 0 && (
+            {/* 🔮 AI SUMMARY — TODAY */}
+            {aiToday && (
               <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
                 <h4 className="font-semibold text-blue-900 dark:text-blue-100">
-                  Today&apos;s Focus
+                  AI Summary — Today
                 </h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  You&apos;ve been most active in{" "}
-                  <strong>{todayTrends[0].category}</strong> today (
-                  {todayTrends[0].percentage}% of your activities).
+                  {aiToday}
                 </p>
               </div>
             )}
 
-            {weekTrends.length > 0 && (
+            {/* 🔮 AI SUMMARY — WEEK */}
+            {aiWeek && (
               <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
                 <h4 className="font-semibold text-green-900 dark:text-green-100">
-                  Weekly Pattern
+                  AI Summary — This Week
                 </h4>
                 <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                  This week, <strong>{weekTrends[0].category}</strong> has been
-                  your primary focus ({weekTrends[0].percentage}% of your
-                  activities).
+                  {aiWeek}
                 </p>
               </div>
             )}
 
-            {monthTrends.length > 0 && (
+            {/* 🔮 AI SUMMARY — MONTH */}
+            {aiMonth && (
               <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
                 <h4 className="font-semibold text-purple-900 dark:text-purple-100">
-                  Monthly Overview
+                  AI Summary — This Month
                 </h4>
                 <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
-                  Over the past month, you&apos;ve logged{" "}
-                  {monthTrends.reduce((sum, trend) => sum + trend.count, 0)}{" "}
-                  activities across {monthTrends.length} categories.
+                  {aiMonth}
                 </p>
               </div>
             )}
 
+            {/* FALLBACK IF NO DATA */}
             {todayTrends.length === 0 &&
               weekTrends.length === 0 &&
               monthTrends.length === 0 && (

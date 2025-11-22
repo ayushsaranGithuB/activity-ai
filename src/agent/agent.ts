@@ -116,7 +116,7 @@ async function askFollowupQuestion(
     _broadCategory?: string,
     _subcategory?: string
 ): Promise<string> {
-    const prompt = `You're a friendly assistant. The user said: "${activity}". 
+    const prompt = `You're an assistant. The user said: "${activity}". 
 Ask one short, casual follow-up question that feels natural and human. 
 Return only the question.`;
     try {
@@ -209,7 +209,7 @@ async function handleFollowupConversation(userMessage: string): Promise<AgentRes
 async function generateNaturalResponse(activity: string, details: string): Promise<string> {
     const prompt = `
 You're a friendly, witty assistant.
-Rewrite the following into ONE short, natural, upbeat reply.
+Rewrite the following into ONE short, natural, witty reply.
 - Only ONE version
 - Keep it conversational, warm, and human
 - 1–2 sentences max
@@ -422,7 +422,7 @@ Rewrite the assistant message below.
 REQUIREMENTS:
 - Output ONLY ONE rewritten sentence (no lists, no options)
 - Keep the meaning exactly the same
-- Make it friendly, peppy, modern, and lightly humorous if natural
+- Make it short and natural, witty if possible
 - 1-2 sentences max
 - No bullet points, no multiple choices
 - Do not add examples or variations
@@ -438,3 +438,5 @@ Message:
         return raw;
     }
 }
+
+

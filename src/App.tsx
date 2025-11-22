@@ -12,7 +12,12 @@ import {
   Settings as SettingsIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 type Screen = "home" | "logs" | "trends" | "settings";
 
@@ -64,6 +69,8 @@ export default function App() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full">
+              {/* Accessibility: SheetTitle for DialogContent */}
+              <SheetTitle className="sr-only">Main Menu</SheetTitle>
               <div className="flex flex-col space-y-4 mt-6">
                 {navigation.map((item) => {
                   const Icon = item.icon;
@@ -81,8 +88,7 @@ export default function App() {
                       }`}
                     >
                       <Icon className="h-5 w-5" />
-                      <span className="text-xl
-">{item.name}</span>
+                      <span className="text-xl">{item.name}</span>
                     </button>
                   );
                 })}

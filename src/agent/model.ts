@@ -4,6 +4,7 @@ const genAI = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || '
 
 export interface ToolCall {
     name: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     arguments: Record<string, any>;
 }
 
