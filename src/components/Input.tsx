@@ -37,7 +37,7 @@ export default function Input({ resetKey }: InputProps) {
     // set focus to input field on mount
     const inputElement = document.getElementById(
       "user-activity-input"
-    ) as HTMLInputElement | null;
+    ) as HTMLTextAreaElement | null;
     if (inputElement) {
       inputElement.focus();
     }
@@ -84,7 +84,7 @@ export default function Input({ resetKey }: InputProps) {
       let parsed;
       try {
         parsed = JSON.parse(responseText);
-      } catch (parseErr) {
+      } catch {
         console.warn("AI response was not valid JSON:", responseText);
         parsed = {
           assistantMessage: responseText,
@@ -187,7 +187,7 @@ export default function Input({ resetKey }: InputProps) {
       let parsed;
       try {
         parsed = JSON.parse(responseText);
-      } catch (parseErr) {
+      } catch {
         console.warn("AI response was not valid JSON:", responseText);
         parsed = {
           assistantMessage: responseText,
@@ -282,12 +282,11 @@ export default function Input({ resetKey }: InputProps) {
           existingCategories
         ) +
         "\n\nIMPORTANT: Return ONLY valid JSON, no extra text, no comments, no explanations.";
-      let responseText;
-      responseText = await generateContent(prompt);
+      const responseText = await generateContent(prompt);
       let parsed;
       try {
         parsed = JSON.parse(responseText);
-      } catch (parseErr) {
+      } catch {
         console.warn("AI response was not valid JSON:", responseText);
         parsed = {
           assistantMessage: responseText,
@@ -383,8 +382,15 @@ export default function Input({ resetKey }: InputProps) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !isWaitingForResponse && !saving && text.trim()) {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (
+      e.key === "Enter" &&
+      !e.shiftKey &&
+      !isWaitingForResponse &&
+      !saving &&
+      text.trim()
+    ) {
+      e.preventDefault();
       handleConversation();
     }
   };
@@ -441,14 +447,20 @@ export default function Input({ resetKey }: InputProps) {
         </div>
       )}
       <div className="input-section">
-        <input
+        <textarea
           name="user-activity"
+          rows={1}
           id="user-activity-input"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            e.target.style.height = "auto";
+            e.target.style.height = e.target.scrollHeight + "px";
+          }}
           onKeyPress={handleKeyPress}
           placeholder="e.g. I just ate dinner"
           disabled={isWaitingForResponse || saving}
+          className="auto-textarea"
         />
         <button
           onClick={handleConversation}

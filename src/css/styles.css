@@ -237,9 +237,13 @@ h2.system-prompt {
     border: none;
     background: #d1d1d1;
     box-shadow: inset var(--distance) var(--distance) calc(var(--distance) * 4) #b3b2b2, inset calc(var(--distance) * -1) calc(var(--distance) * -1) calc(var(--distance) * 4) #ebe9e9;
+    position: sticky;
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
-.input-section input {
+
+.input-section textarea {
     --distance: 6px;
     color: #656464;
     background: none;
@@ -250,10 +254,33 @@ h2.system-prompt {
     letter-spacing: 0.6px;
     font-weight: 600;
     margin: 0;
+    border-radius: 0;
 }
 
 
 .input-section input::placeholder {
+    color: #ffffff;
+}
+
+.auto-textarea {
+    width: 100%;
+    max-height: 160px;
+    resize: none;
+    overflow-y: auto;
+    line-height: 1.4;
+    color: #656464;
+    background: none;
+    border: none;
+    outline: none;
+    padding: 0.75em 1.25em;
+    font-size: 1.2em;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+    margin: 0;
+    font-family: inherit;
+}
+
+.auto-textarea::placeholder {
     color: #ffffff;
 }
 
