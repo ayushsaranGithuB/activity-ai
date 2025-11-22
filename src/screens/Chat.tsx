@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, use } from "react";
 import { processMessage, initializeAgent } from "../agent/agent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Bot, User } from "lucide-react";
+import { Keyboard } from "@capacitor/keyboard";
 
 interface Message {
   id: number;
@@ -19,6 +20,7 @@ const Chat: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     initializeAgent();
@@ -28,6 +30,20 @@ const Chat: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    Keyboard.addListener("keyboardWillShow", () => {
+      if (inputRef.current) {
+        inputRef.current.style.paddingBottom = "80px";
+      }
+    });
+
+    Keyboard.addListener("keyboardWillHide", () => {
+      if (inputRef.current) {
+        inputRef.current.style.paddingBottom = "0px";
+      }
+    });
+  }, []);
 
   const loadMessages = async () => {
     // Load messages from DB
@@ -174,7 +190,10 @@ const Chat: React.FC = () => {
       </ScrollArea>
 
       {/* Input */}
-      <div className=" bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
+      <div
+        ref={inputRef}
+        className=" bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 "
+      >
         <div className="max-w-4xl mx-auto">
           <div className="relative flex items-end gap-3">
             <div className="flex-1 relative">

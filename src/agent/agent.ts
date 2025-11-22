@@ -117,7 +117,7 @@ async function askFollowupQuestion(
     _subcategory?: string
 ): Promise<string> {
     const prompt = `You're an assistant. The user said: "${activity}". 
-Ask one short, casual follow-up question that feels natural and human. 
+Ask one short, casual follow-up question to get more details. 
 Return only the question.`;
     try {
         const resp = await callModel(prompt, [{ role: 'user', content: activity }], toolDefinitions);
@@ -260,7 +260,8 @@ async function logActivity(description: string, categoryName?: string): Promise<
 
         const insertResult = await dbInsert('activities', {
             description,
-            category_id: categoryId
+            category_id: categoryId,
+            timestamp: new Date().toISOString()
         });
 
         return insertResult?.id;

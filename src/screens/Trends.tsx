@@ -210,6 +210,18 @@ const Trends: React.FC = () => {
         <p className="text-muted-foreground">See how you spend your time</p>
       </div>
 
+      {/* FALLBACK IF NO DATA */}
+      {todayTrends.length === 0 &&
+        weekTrends.length === 0 &&
+        monthTrends.length === 0 && (
+          <div className="text-center py-8">
+            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              Start logging activities to see your trends!
+            </p>
+          </div>
+        )}
+
       <div className="grid gap-6 md:grid-cols-3">
         <TrendCard
           title="Today"
@@ -217,76 +229,56 @@ const Trends: React.FC = () => {
           icon={Calendar}
           color="text-blue-500"
         />
+
+        {/* 🔮 AI SUMMARY — TODAY */}
+        {aiToday && (
+          <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+            <h4 className="font-semibold text-blue-900 dark:text-blue-100">
+              AI Summary — Today
+            </h4>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+              {aiToday}
+            </p>
+          </div>
+        )}
+
         <TrendCard
           title="This Week"
           trends={weekTrends}
           icon={TrendingUp}
           color="text-green-500"
         />
+
+        {/* 🔮 AI SUMMARY — WEEK */}
+        {aiWeek && (
+          <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+            <h4 className="font-semibold text-green-900 dark:text-green-100">
+              AI Summary — This Week
+            </h4>
+            <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+              {aiWeek}
+            </p>
+          </div>
+        )}
         <TrendCard
           title="This Month"
           trends={monthTrends}
           icon={Activity}
           color="text-purple-500"
         />
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Insights</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* 🔮 AI SUMMARY — TODAY */}
-            {aiToday && (
-              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-100">
-                  AI Summary — Today
-                </h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  {aiToday}
-                </p>
-              </div>
-            )}
-
-            {/* 🔮 AI SUMMARY — WEEK */}
-            {aiWeek && (
-              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-                <h4 className="font-semibold text-green-900 dark:text-green-100">
-                  AI Summary — This Week
-                </h4>
-                <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                  {aiWeek}
-                </p>
-              </div>
-            )}
-
-            {/* 🔮 AI SUMMARY — MONTH */}
-            {aiMonth && (
-              <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
-                <h4 className="font-semibold text-purple-900 dark:text-purple-100">
-                  AI Summary — This Month
-                </h4>
-                <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
-                  {aiMonth}
-                </p>
-              </div>
-            )}
-
-            {/* FALLBACK IF NO DATA */}
-            {todayTrends.length === 0 &&
-              weekTrends.length === 0 &&
-              monthTrends.length === 0 && (
-                <div className="text-center py-8">
-                  <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    Start logging activities to see your trends!
-                  </p>
-                </div>
-              )}
+        {/* 🔮 AI SUMMARY — MONTH */}
+        {aiMonth && (
+          <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
+            <h4 className="font-semibold text-purple-900 dark:text-purple-100">
+              AI Summary — This Month
+            </h4>
+            <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
+              {aiMonth}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
     </div>
   );
 };

@@ -49,7 +49,7 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground antialiased flex flex-col w-full px-3">
       <Toaster position="bottom-right" />
 
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60  pt-[30px]">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center space-x-2">
             <button
@@ -64,14 +64,14 @@ export default function App() {
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-full w-full" />
+                <Menu className="h-full w-full " />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full">
               {/* Accessibility: SheetTitle for DialogContent */}
               <SheetTitle className="sr-only">Main Menu</SheetTitle>
-              <div className="flex flex-col space-y-4 mt-6">
+              <div className="flex flex-col space-y-4 mt-6  pt-[80px]">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   return (
