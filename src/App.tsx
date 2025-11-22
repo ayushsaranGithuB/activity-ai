@@ -59,11 +59,11 @@ export default function App() {
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
+                <Menu className="h-full w-full" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-64">
+            <SheetContent side="right" className="w-full">
               <div className="flex flex-col space-y-4 mt-6">
                 {navigation.map((item) => {
                   const Icon = item.icon;
@@ -81,7 +81,8 @@ export default function App() {
                       }`}
                     >
                       <Icon className="h-5 w-5" />
-                      <span>{item.name}</span>
+                      <span className="text-xl
+">{item.name}</span>
                     </button>
                   );
                 })}
