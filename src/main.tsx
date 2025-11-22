@@ -1,9 +1,7 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { initializeAI } from "./lib/ai";
 import "./css/styles.css";
-import "./lib/mcp-sync";
 import { Capacitor } from "@capacitor/core";
 
 // Initialize Gemini AI with API key from environment variables
