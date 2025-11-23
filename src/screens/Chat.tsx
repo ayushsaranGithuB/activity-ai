@@ -134,11 +134,7 @@ const Chat: React.FC = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2 max-w-md">
-                {aiQuestion ? (
-                  <p className="text-lg">{aiQuestion}</p>
-                ) : (
-                  <h2 className="text-2xl font-bold">What are you up to?</h2>
-                )}
+                <p className="text-lg">{aiQuestion}</p>
               </div>
             </div>
           )}
