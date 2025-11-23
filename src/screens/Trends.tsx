@@ -10,6 +10,7 @@ interface TrendData {
   category: string;
   totalMinutes: number;
   percentage: number;
+  subcategories: { name: string; totalMinutes: number; percentage: number }[];
 }
 
 const TrendCard = ({
@@ -32,27 +33,44 @@ const TrendCard = ({
     </CardHeader>
     <CardContent>
       {trends.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {trends.map((trend) => (
-            <div
-              key={trend.category}
-              className="flex items-center justify-between "
-            >
-              <div className="flex items-center space-x-3 w-full">
-                <span className="font-medium">{trend.category}</span>
+            <div key={trend.category} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3 w-full">
+                  <span className="font-medium">{trend.category}</span>
+                </div>
+                <div
+                  className={`h-[2px] rounded-md bg-white/30`}
+                  style={{ width: `${trend.percentage}%` }}
+                />
+                <div className="flex items-center space-x-2 min-w-[120px]">
+                  <span className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-md">
+                    {trend.totalMinutes} min
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {trend.percentage}%
+                  </span>
+                </div>
               </div>
-              <div
-                className={`h-[2px] rounded-md bg-white/30`}
-                style={{ width: `${trend.percentage}%` }}
-              />
-              <div className="flex items-center space-x-2 min-w-[120px]">
-                <span className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-md">
-                  {trend.totalMinutes} min
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {trend.percentage}%
-                </span>
-              </div>
+              {trend.subcategories.map((sub) => (
+                <div
+                  key={sub.name}
+                  className="flex items-center justify-between ml-4 opacity-60 mb-0"
+                >
+                  <div className="flex items-center space-x-3 w-full">
+                    <span className="text-xs text-muted-foreground">
+                      {sub.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 min-w-[120px]">
+                    <span className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded-md">
+                      {sub.totalMinutes} min
+                    </span>
+                    
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -84,6 +102,8 @@ const Trends: React.FC = () => {
         category_id?: number;
         timestamp: string;
         length_mins?: number;
+        category?: string;
+        sub_category?: string;
       }[],
       categories: { id: number; name: string }[],
       period: "today" | "week" | "month"
@@ -111,26 +131,49 @@ const Trends: React.FC = () => {
         return activityDate >= startDate;
       });
 
-      const categoryTotals: { [key: string]: number } = {};
+      const categoryData: {
+        [category: string]: { total: number; subs: { [sub: string]: number } };
+      } = {};
       filteredActivities.forEach((activity) => {
         const categoryName = activity.category_id
           ? categories.find((c) => c.id === activity.category_id)?.name ||
             "Uncategorized"
-          : "Uncategorized";
-        categoryTotals[categoryName] =
-          (categoryTotals[categoryName] || 0) + (activity.length_mins || 0);
+          : activity.category || "Uncategorized";
+        const subName = activity.sub_category || "General";
+
+        if (!categoryData[categoryName]) {
+          categoryData[categoryName] = { total: 0, subs: {} };
+        }
+        categoryData[categoryName].total += activity.length_mins || 0;
+        categoryData[categoryName].subs[subName] =
+          (categoryData[categoryName].subs[subName] || 0) +
+          (activity.length_mins || 0);
       });
 
-      const total = Object.values(categoryTotals).reduce(
-        (sum, mins) => sum + mins,
+      const totalAll = Object.values(categoryData).reduce(
+        (sum, cat) => sum + cat.total,
         0
       );
-      const trends: TrendData[] = Object.entries(categoryTotals)
-        .map(([category, totalMinutes]) => ({
-          category,
-          totalMinutes,
-          percentage: total > 0 ? Math.round((totalMinutes / total) * 100) : 0,
-        }))
+      const trends: TrendData[] = Object.entries(categoryData)
+        .map(([category, data]) => {
+          const subcategories = Object.entries(data.subs)
+            .map(([name, totalMinutes]) => ({
+              name,
+              totalMinutes,
+              percentage:
+                data.total > 0
+                  ? Math.round((totalMinutes / data.total) * 100)
+                  : 0,
+            }))
+            .sort((a, b) => b.totalMinutes - a.totalMinutes);
+          return {
+            category,
+            totalMinutes: data.total,
+            percentage:
+              totalAll > 0 ? Math.round((data.total / totalAll) * 100) : 0,
+            subcategories,
+          };
+        })
         .sort((a, b) => b.totalMinutes - a.totalMinutes);
 
       return trends;
