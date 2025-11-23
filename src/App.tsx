@@ -1,8 +1,4 @@
-import React, { useState } from "react";
-import Chat from "@/screens/Chat";
-import Logs from "@/screens/Logs";
-import Trends from "@/screens/Trends";
-import Settings from "@/screens/Settings";
+import React from "react";
 import { Toaster } from "react-hot-toast";
 import {
   Menu,
@@ -18,32 +14,25 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
-
-type Screen = "home" | "logs" | "trends" | "settings";
+import { setupNotifications } from "./utils/notifications";
+import { getLastActivityTimestamp } from "@/lib/logsActions";
+import { RouterProvider, Link, useNavigate } from "@tanstack/react-router";
+import { router } from "./router";
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>("home");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    setupNotifications(navigate, getLastActivityTimestamp);
+  }, [navigate]);
 
   const navigation = [
-    { id: "home" as Screen, name: "Home", icon: Home, component: Chat },
-    { id: "logs" as Screen, name: "Logs", icon: FileText, component: Logs },
-    {
-      id: "trends" as Screen,
-      name: "Trends",
-      icon: TrendingUp,
-      component: Trends,
-    },
-    {
-      id: "settings" as Screen,
-      name: "Settings",
-      icon: SettingsIcon,
-      component: Settings,
-    },
+    { path: "/", name: "Home", icon: Home },
+    { path: "/logs", name: "Logs", icon: FileText },
+    { path: "/trends", name: "Trends", icon: TrendingUp },
+    { path: "/settings", name: "Settings", icon: SettingsIcon },
   ];
-
-  const CurrentScreenComponent =
-    navigation.find((nav) => nav.id === currentScreen)?.component || Chat;
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased flex flex-col w-full px-3">
@@ -52,13 +41,13 @@ export default function App() {
       <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60  pt-[30px]">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setCurrentScreen("home")}
+            <Link
+              to="/"
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
               <img src="/logo.svg" alt="Activity AI Logo" className="h-6 w-6" />
               <span className="font-semibold">Activity AI</span>
-            </button>
+            </Link>
           </div>
 
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -69,49 +58,40 @@ export default function App() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full">
-              {/* Accessibility: SheetTitle for DialogContent */}
               <SheetTitle className="sr-only">Main Menu</SheetTitle>
-              <div className="flex flex-col space-y-4 mt-6  pt-[80px]">
+              <div className="flex flex-col space-y-4 mt-6 pt-[80px]">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setCurrentScreen(item.id);
-                        setIsMenuOpen(false);
-                      }}
-                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                        currentScreen === item.id
-                          ? "bg-primary/10 text-primary"
-                          : "hover:bg-muted"
-                      }`}
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors`}
                     >
                       <Icon className="h-5 w-5" />
                       <span className="text-xl">{item.name}</span>
-                    </button>
+                    </Link>
                   );
                 })}
               </div>
             </SheetContent>
           </Sheet>
 
-          {/* Desktop navigation */}
           <nav className="hidden md:flex items-center space-x-1">
             {navigation.slice(1).map((item) => {
-              // Skip home since logo handles it
               const Icon = item.icon;
               return (
-                <Button
-                  key={item.id}
-                  variant={currentScreen === item.id ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setCurrentScreen(item.id)}
+                <Link
+                  key={item.path}
+                  to={item.path}
                   className="flex items-center space-x-2"
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.name}</span>
-                </Button>
+                  <Button variant="ghost" size="sm">
+                    <Icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Button>
+                </Link>
               );
             })}
           </nav>
@@ -119,7 +99,8 @@ export default function App() {
       </header>
 
       <main className="flex-1 overflow-hidden flex flex-col">
-        <CurrentScreenComponent />
+        {/* TanStack Router will render the current route's component here */}
+        <RouterProvider router={router} />
       </main>
     </div>
   );

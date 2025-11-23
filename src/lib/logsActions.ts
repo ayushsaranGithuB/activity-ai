@@ -1,3 +1,11 @@
+// Returns the timestamp of the most recent activity, or null if none
+export async function getLastActivityTimestamp(): Promise<Date | null> {
+    const activities = await fetchActivities();
+    if (!activities.length) return null;
+    // Assume activities are sorted by timestamp DESC
+    const latest = activities[0];
+    return latest.timestamp ? new Date(latest.timestamp) : null;
+}
 import { Capacitor } from "@capacitor/core";
 import { dbQuery } from "@/agent/tools";
 import { sample_activities } from "@/components/dummyData/sample-activities";

@@ -441,3 +441,44 @@ Message:
 }
 
 
+/** -------------------------------------------------------
+ *  DYNAMIC QUESTION GENERATION - Based on Time of Day
+ * -------------------------------------------------------- */
+
+export async function getAIQuestionForTime(): Promise<string> {
+
+    // 1. Pull recent activities from SQLite
+    const recent = await dbQuery(`
+    SELECT description, timestamp
+    FROM activities
+    WHERE timestamp > datetime('now', '-7 days')
+    ORDER BY timestamp DESC
+  `);
+
+    // 2. Decide context
+    const contextJSON = JSON.stringify(recent).slice(0, 5000);
+
+    // 3. Build prompt
+    const prompt = `
+You are ActivityAgent. Produce ONE short, friendly question for the user.
+
+The question should:
+- match the time of day
+- relate to their real activities
+- help them log something useful
+- be casual, warm, slightly playful
+- never be a list, never multiple options
+- 1 sentence max
+
+Time-of-day context:
+Current local time is ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+
+Recent user activities:
+${contextJSON}
+
+Return ONLY the question.
+`;
+
+    const response = await callModel(prompt, [], toolDefinitions);
+    return response?.content?.trim() || "How’s your day going?";
+}

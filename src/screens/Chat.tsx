@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { processMessage, initializeAgent } from "../agent/agent";
+import {
+  processMessage,
+  initializeAgent,
+  getAIQuestionForTime,
+} from "../agent/agent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -107,6 +111,15 @@ const Chat: React.FC = () => {
     }
   };
 
+  const [aiQuestion, setAIQuestion] = useState("What are you up to today?");
+
+  useEffect(() => {
+    const fetchAIQuestion = async () => {
+      const question = await getAIQuestionForTime();
+      setAIQuestion(question || "What are you up to?");
+    };
+    fetchAIQuestion();
+  }, []);
   return (
     <div className="flex flex-col h-full bg-background flex-1">
       {/* Messages */}
@@ -121,6 +134,7 @@ const Chat: React.FC = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2 max-w-md">
+                <p className="text-lg">{aiQuestion}</p>
                 <h2 className="text-2xl font-bold">What are you up to?</h2>
               </div>
             </div>
