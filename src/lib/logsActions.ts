@@ -20,7 +20,7 @@ export async function fetchActivities(): Promise<ActivityLogItem[]> {
                  LEFT JOIN categories c ON a.category_id = c.id
                  ORDER BY a.timestamp DESC`
             );
-            return rows?.map((a: any) => ({
+            return rows?.map((a: ActivityLogItem) => ({
                 id: a.id,
                 description: a.description,
                 category_id: a.category_id,
