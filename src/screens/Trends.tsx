@@ -371,14 +371,15 @@ Guidelines:
     loadTrends();
   }, [computeTrends]);
 
-  if (loading) {
-    return (
-      <div className="container py-6 space-y-6 flex items-center justify-center flex-col">
-        <Spinner />
-        <h2 className="text-xl font-bold animate-pulse">Computing trends...</h2>
-      </div>
-    );
-  }
+  // if (loading) {
+  return (
+    <div className="container py-10 space-y-1 flex items-center justify-center flex-col">
+      {/* <Spinner /> */}
+      <img src="/logo-animated.svg" alt="" width={200} />
+      <h2 className="text-xl font-bold animate-pulse">Computing trends...</h2>
+    </div>
+  );
+  // }
 
   return (
     <div className="container py-6 space-y-6">
