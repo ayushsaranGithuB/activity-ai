@@ -244,3 +244,11 @@ export interface ConversationResponse {
         category: string;
     };
 }
+
+
+export interface Message {
+    id: number;
+    role: "user" | "agent";
+    content: string;
+    timestamp: Date;
+}

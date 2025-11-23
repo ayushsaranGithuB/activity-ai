@@ -75,6 +75,8 @@ body {
     justify-content: center;
     min-height: 100svh;
     width: 100%;
+    max-width: 60ch;
+    margin: 0 auto;
 }
 
 /* Settings Page Styles */

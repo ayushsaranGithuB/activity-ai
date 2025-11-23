@@ -8,15 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot } from "lucide-react";
 import { Keyboard } from "@capacitor/keyboard";
-
-interface Message {
-  id: number;
-  role: "user" | "agent";
-  content: string;
-  timestamp: Date;
-}
+import { Capacitor } from "@capacitor/core";
+import { Message } from "@/types";
+import { sampleMessages } from "@/components/dummyData/sample-messages";
+import clsx from "clsx";
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -50,8 +47,10 @@ const Chat: React.FC = () => {
   }, []);
 
   const loadMessages = async () => {
-    // Load messages from DB
-    // For now, start empty
+    if (!Capacitor.isNativePlatform()) {
+      // load dummy messages
+      setMessages(sampleMessages);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -124,7 +123,7 @@ const Chat: React.FC = () => {
     <div className="flex flex-col h-full bg-background flex-1">
       {/* Messages */}
       <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-        <div className="space-y-4 pb-4">
+        <div className="space-y-5 pb-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
               <Avatar className="h-16 w-16">
@@ -146,33 +145,40 @@ const Chat: React.FC = () => {
                 message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              {message.role === "agent" && (
+              {/* {message.role === "agent" && (
                 <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
                   <AvatarImage src="" alt="Activity AI" />
                   <AvatarFallback>
                     <Bot className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
-              )}
+              )} */}
 
               <div
                 className={`rounded-lg px-4 py-2 max-w-[80%] break-words ${
                   message.role === "user"
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-neutral-800 text-primary-foreground rounded-xl px-4 py-2 rounded-br-none"
                     : "bg-muted"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <p
+                  className={clsx(
+                    "whitespace-pre-wrap",
+                    message.role === "user" ? "text-sm" : "text-lg"
+                  )}
+                >
+                  {message.content}
+                </p>
               </div>
 
-              {message.role === "user" && (
+              {/* {message.role === "user" && (
                 <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
                   <AvatarImage src="" alt="You" />
                   <AvatarFallback>
                     <User className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
-              )}
+              )} */}
             </div>
           ))}
 
