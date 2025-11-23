@@ -115,13 +115,17 @@ async function askFollowupQuestion(
     activity: string,
     _broadCategory?: string,
     _subcategory?: string
-): Promise<string> {
+): Promise<string | null> {
     const prompt = `You're an assistant. The user said: "${activity}". 
-Ask one short, casual follow-up question to get more details. 
-Return only the question.`;
+Decide if you have enough information to log this activity in a category. If yes, return "NO_FOLLOWUP". If not, ask one short, casual follow-up question to get more details. 
+Return only the decision or the question.`;
     try {
         const resp = await callModel(prompt, [{ role: 'user', content: activity }], toolDefinitions);
-        return resp?.content?.trim() || "That's interesting — want to share a bit more?";
+        const result = resp?.content?.trim();
+        if (result === "NO_FOLLOWUP") {
+            return null; // No follow-up needed
+        }
+        return result || "That's interesting — want to share a bit more?";
     } catch {
         return "That's interesting — want to share a bit more?";
     }
@@ -303,12 +307,13 @@ export async function processMessage(userMessage: string): Promise<AgentResponse
             activityMatch.category,
             activityMatch.subcategory
         );
-        const styledFollowup = await styleResponse(followup);
-
-        await saveMessage('user', userMessage);
-        await saveMessage('agent', styledFollowup);
-
-        return { content: styledFollowup };
+        if (followup) {
+            const styledFollowup = await styleResponse(followup);
+            await saveMessage('agent', styledFollowup);
+            return { content: styledFollowup };
+        }
+        const fallbackResponse = await styleResponse("Got it! Logging this activity.");
+        return { content: fallbackResponse };
     }
 
     // GENERAL CHAT MODE

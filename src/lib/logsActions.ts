@@ -15,14 +15,17 @@ export async function fetchActivities(): Promise<ActivityLogItem[]> {
     if (Capacitor.isNativePlatform()) {
         try {
             const rows = await dbQuery(
-                "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
+                `SELECT a.id, a.description, a.category_id, a.timestamp, c.name as category 
+                 FROM activities a
+                 LEFT JOIN categories c ON a.category_id = c.id
+                 ORDER BY a.timestamp DESC`
             );
             return rows?.map((a: ActivityLogItem) => ({
                 id: a.id,
                 description: a.description,
                 category_id: a.category_id,
                 timestamp: a.timestamp,
-                category: undefined,
+                category: a.category || undefined,
             })) || [];
         } catch (err) {
             console.error("Failed to fetch activities from SQLite:", err);

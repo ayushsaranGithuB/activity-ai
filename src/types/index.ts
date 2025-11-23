@@ -4,7 +4,7 @@ export interface ActivityLogItem {
     description: string;
     category_id?: number;
     timestamp: string;
-    category?: string;
+    category?: string; // Optional category name for display
 }
 // Activity AI - Type Definitions
 
