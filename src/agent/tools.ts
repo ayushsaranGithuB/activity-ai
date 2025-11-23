@@ -189,7 +189,7 @@ export const storage = {
     async getAllActivities() {
         try {
             return await dbQuery(
-                "SELECT id, description, category_id, length_mins, timestamp FROM activities ORDER BY timestamp DESC"
+                "SELECT id, description, category_id, length_mins, timestamp, sub_category FROM activities ORDER BY timestamp DESC"
             );
         } catch (error) {
             console.error("Failed to fetch activities:", error);

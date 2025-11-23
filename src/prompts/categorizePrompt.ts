@@ -20,7 +20,12 @@ Category Rules:
 - DO NOT use example names as categories - use the main category names instead
 - Capitalize each word (e.g., "Work", "Food", "Exercise")
 - Be descriptive and meaningful for new categories
-- Also provide a specific sub-category (1-3 words) that describes the activity more precisely
+
+Sub-category Rules:
+- Provide a specific sub-category (1-3 words) that describes the activity more precisely
+- Use concrete, specific terms like "Running", "Meeting", "Breakfast", "Yoga", "Coding"
+- NEVER use these generic terms: "General", "Other", "Misc", "Various", "Activity", "Task", "Work", "Exercise", "Food", "Entertainment"
+- Make it actionable and descriptive - think of what the person was actually doing
 
 ${forceRecategorize ? "IMPORTANT: This is a recategorization request. Choose the BEST main category from the list above. Only create a new category if absolutely necessary." : ""}
 
@@ -54,7 +59,12 @@ Category Rules:
 - DO NOT use example names as categories - use the main category names instead
 - Capitalize each word (e.g., "Work", "Food", "Exercise")
 - Be descriptive and meaningful for new categories
-- Also provide a specific sub-category (1-3 words) that describes the activity more precisely
+
+Sub-category Rules:
+- For each activity, provide a specific sub-category (1-3 words) that describes the activity more precisely
+- Use concrete, specific terms like "Running", "Meeting", "Breakfast", "Yoga", "Coding"
+- NEVER use these generic terms: "General", "Other", "Misc", "Various", "Activity", "Task", "Work", "Exercise", "Food", "Entertainment"
+- Make it actionable and descriptive - think of what the person was actually doing
 
 ${forceRecategorize ? "IMPORTANT: This is a recategorization request. Choose the BEST main category from the list above. Only create a new category if absolutely necessary." : ""}
 

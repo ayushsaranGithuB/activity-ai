@@ -67,7 +67,6 @@ const TrendCard = ({
                     <span className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded-md">
                       {sub.totalMinutes} min
                     </span>
-                    
                   </div>
                 </div>
               ))}
@@ -193,7 +192,7 @@ const Trends: React.FC = () => {
 
           activities =
             (await tools.dbQuery(
-              "SELECT id, description, category_id, length_mins, timestamp FROM activities ORDER BY timestamp DESC"
+              "SELECT id, description, category_id, length_mins, timestamp, sub_category FROM activities ORDER BY timestamp DESC"
             )) || [];
 
           categories =
