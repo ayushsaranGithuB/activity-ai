@@ -1,12 +1,13 @@
-// Broad Category Configuration and Utilities
+// Category Configuration and Utilities for AI Guidance
 
-import type { BroadCategory, BroadCategoryMapping } from "../types";
+import type { CategoryMapping } from "../types";
 
-// Predefined broad category mappings with keywords for AI classification
-export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
+// Predefined category mappings with examples for AI classification guidance
+export const CATEGORY_MAPPINGS: CategoryMapping[] = [
     {
-        broad: "Work",
-        subcategories: [
+        name: "Work",
+        description: "Professional work, development, and business activities",
+        examples: [
             "App Development",
             "Programming",
             "Coding",
@@ -17,7 +18,6 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "Business",
             "Design",
         ],
-        description: "Professional work, development, and business activities",
         keywords: [
             "work",
             "working",
@@ -35,8 +35,9 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Food",
-        subcategories: [
+        name: "Food",
+        description: "Eating, drinking, and food preparation activities",
+        examples: [
             "Eating",
             "Drinking Beverage",
             "Cooking",
@@ -47,7 +48,6 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "Snack",
             "Baking",
         ],
-        description: "Eating, drinking, and food preparation activities",
         keywords: [
             "eat",
             "eating",
@@ -71,8 +71,9 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Physical Activity",
-        subcategories: [
+        name: "Exercise",
+        description: "Physical exercise and sports activities",
+        examples: [
             "Exercise",
             "Stretching",
             "Running",
@@ -84,7 +85,6 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "Yoga",
             "Sports",
         ],
-        description: "Physical exercise and sports activities",
         keywords: [
             "exercise",
             "workout",
@@ -106,8 +106,9 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Entertainment",
-        subcategories: [
+        name: "Entertainment",
+        description: "Entertainment and leisure activities",
+        examples: [
             "Watching TV",
             "Gaming",
             "Movies",
@@ -117,7 +118,6 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "Music",
             "Podcasts",
         ],
-        description: "Entertainment and leisure activities",
         keywords: [
             "watching",
             "watch",
@@ -137,8 +137,9 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Home & Household",
-        subcategories: [
+        name: "Errands & Chores",
+        description: "Home maintenance and household tasks",
+        examples: [
             "Household Cleaning",
             "Cleaning",
             "Chores",
@@ -148,7 +149,6 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "Repairs",
             "Gardening",
         ],
-        description: "Home maintenance and household tasks",
         keywords: [
             "cleaning",
             "clean",
@@ -168,8 +168,9 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Health",
-        subcategories: [
+        name: "Health",
+        description: "Wellness, relaxation, and self-care activities",
+        examples: [
             "Relaxing Outdoors",
             "Sunbathing",
             "Meditation",
@@ -179,7 +180,6 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "Nap",
             "Rest",
         ],
-        description: "Wellness, relaxation, and self-care activities",
         keywords: [
             "relaxing",
             "relax",
@@ -199,8 +199,9 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Social",
-        subcategories: [
+        name: "Social",
+        description: "Social interactions and relationship activities",
+        examples: [
             "Friends",
             "Family",
             "Date",
@@ -209,7 +210,6 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "Hangout",
             "Social Activity",
         ],
-        description: "Social interactions and relationship activities",
         keywords: [
             "friend",
             "friends",
@@ -227,8 +227,9 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
         ],
     },
     {
-        broad: "Learning & Education",
-        subcategories: [
+        name: "Learning & Education",
+        description: "Educational activities and learning",
+        examples: [
             "Reading",
             "Studying",
             "Course",
@@ -238,7 +239,6 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "Book",
             "Article",
         ],
-        description: "Educational activities and learning",
         keywords: [
             "reading",
             "read",
@@ -255,51 +255,16 @@ export const BROAD_CATEGORY_MAPPINGS: BroadCategoryMapping[] = [
             "class",
         ],
     },
-    {
-        broad: "Other",
-        subcategories: ["Uncategorized", "General", "Miscellaneous"],
-        description: "Activities that don't fit other categories",
-        keywords: ["other", "misc", "uncategorized", "general"],
-    },
 ];
 
-// Helper function to determine broad category from subcategory name
-export function getBroadCategoryForSubcategory(
-    subcategory: string
-): BroadCategory {
-    const normalizedSubcategory = subcategory.toLowerCase();
-
-    for (const mapping of BROAD_CATEGORY_MAPPINGS) {
-        // Check if subcategory matches exactly
-        const matchesSubcategory = mapping.subcategories.some(
-            (sub) => sub.toLowerCase() === normalizedSubcategory
-        );
-
-        if (matchesSubcategory) {
-            return mapping.broad;
-        }
-
-        // Check if any keyword matches
-        const matchesKeyword = mapping.keywords.some((keyword) =>
-            normalizedSubcategory.includes(keyword.toLowerCase())
-        );
-
-        if (matchesKeyword) {
-            return mapping.broad;
-        }
-    }
-
-    return "Other";
-}
-
-// Helper function to determine broad category from activity text
-export function getBroadCategoryFromText(text: string): BroadCategory {
+// Helper function to determine category from activity text
+export function getCategoryFromText(text: string): string {
     const normalizedText = text.toLowerCase();
 
-    // Score each broad category based on keyword matches
-    const scores: Map<BroadCategory, number> = new Map();
+    // Score each category based on keyword matches
+    const scores: Map<string, number> = new Map();
 
-    for (const mapping of BROAD_CATEGORY_MAPPINGS) {
+    for (const mapping of CATEGORY_MAPPINGS) {
         let score = 0;
         for (const keyword of mapping.keywords) {
             if (normalizedText.includes(keyword.toLowerCase())) {
@@ -307,17 +272,17 @@ export function getBroadCategoryFromText(text: string): BroadCategory {
             }
         }
         if (score > 0) {
-            scores.set(mapping.broad, score);
+            scores.set(mapping.name, score);
         }
     }
 
-    // Return the broad category with the highest score
+    // Return the category with the highest score
     if (scores.size === 0) {
         return "Other";
     }
 
     let maxScore = 0;
-    let bestCategory: BroadCategory = "Other";
+    let bestCategory = "Other";
 
     for (const [category, score] of scores.entries()) {
         if (score > maxScore) {
@@ -329,23 +294,19 @@ export function getBroadCategoryFromText(text: string): BroadCategory {
     return bestCategory;
 }
 
-// Helper function to get all subcategories for a broad category
-export function getSubcategoriesForBroadCategory(
-    broadCategory: BroadCategory
-): string[] {
-    const mapping = BROAD_CATEGORY_MAPPINGS.find((m) => m.broad === broadCategory);
-    return mapping ? mapping.subcategories : [];
+// Helper function to get examples for a category
+export function getExamplesForCategory(categoryName: string): string[] {
+    const mapping = CATEGORY_MAPPINGS.find((m) => m.name === categoryName);
+    return mapping ? mapping.examples : [];
 }
 
-// Helper function to get description for a broad category
-export function getBroadCategoryDescription(
-    broadCategory: BroadCategory
-): string {
-    const mapping = BROAD_CATEGORY_MAPPINGS.find((m) => m.broad === broadCategory);
+// Helper function to get description for a category
+export function getCategoryDescription(categoryName: string): string {
+    const mapping = CATEGORY_MAPPINGS.find((m) => m.name === categoryName);
     return mapping ? mapping.description : "";
 }
 
-// Get all broad categories
-export function getAllBroadCategories(): BroadCategory[] {
-    return BROAD_CATEGORY_MAPPINGS.map((m) => m.broad);
+// Get all category names
+export function getAllCategoryNames(): string[] {
+    return CATEGORY_MAPPINGS.map((m) => m.name);
 }

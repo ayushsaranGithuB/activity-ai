@@ -5,6 +5,7 @@ import { sendNotification } from "@/utils/notifications";
 import { Switch } from "@/components/ui/switch";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { storage } from "@/agent/tools";
+import { recategorizeActivities } from "@/agent/agent";
 
 const exportDatabase = async () => {
   try {
@@ -30,6 +31,30 @@ const exportDatabase = async () => {
   } catch (error) {
     console.error("Failed to export database:", error);
     alert("Failed to export database. Please try again.");
+  }
+};
+
+const handleRecategorize = async () => {
+  if (
+    !confirm(
+      "This will recategorize all your activities using AI. This may take a few minutes. Continue?"
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const result = await recategorizeActivities();
+    if (result.success) {
+      alert(
+        `Recategorization complete! ${result.recategorized} activities updated. ${result.errors} errors.`
+      );
+    } else {
+      alert("Recategorization failed. Please try again.");
+    }
+  } catch (error) {
+    console.error("Recategorization error:", error);
+    alert("Recategorization failed. Please check the console for details.");
   }
 };
 
@@ -91,6 +116,20 @@ const Settings: React.FC = () => {
                 }}
               >
                 Send Test Notification
+              </button>
+            </div>
+
+            <div className="p-4 rounded-lg  bg-neutral-900">
+              <h4 className="font-medium mb-2">Recategorize Activities</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Use AI to recategorize all your existing activities with better,
+                more specific categories.
+              </p>
+              <button
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
+                onClick={handleRecategorize}
+              >
+                Recategorize All Activities
               </button>
             </div>
 

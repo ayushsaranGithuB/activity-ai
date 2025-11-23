@@ -7,20 +7,20 @@ import {
     dbEnsureSchema,
     trendCompute,
     backupCreate,
-    backupRestore,
-    initDB
+    backupRestore
 } from './tools';
+import { initDB } from '../db/initialize';
 import { CATEGORIZE_PROMPT } from '../prompts/categorizePrompt';
 import { systemPrompt } from './prompt';
 import { Capacitor } from '@capacitor/core';
+
 
 export interface AgentResponse {
     content: string;
 }
 
 interface CategoryResult {
-    broadCategory?: string;
-    subcategory?: string;
+    category?: string;
 }
 
 let isInitialized = false;
@@ -64,7 +64,7 @@ function extractDuration(message: string): number | undefined {
  * -------------------------------------------------------- */
 async function detectActivity(
     message: string
-): Promise<{ description: string; category?: string; subcategory?: string; lengthMins?: number } | null> {
+): Promise<{ description: string; category?: string; lengthMins?: number } | null> {
     const trimmed = message.trim();
 
     // Hard filters
@@ -106,16 +106,12 @@ Message: "${trimmed}"
         const categorizePrompt = CATEGORIZE_PROMPT(trimmed, existingCategories);
         const parsed = await callModelExpectJson(categorizePrompt, trimmed);
 
-        if (parsed && parsed.broadCategory) {
-            const bc = parsed.broadCategory.trim().toLowerCase();
+        if (parsed && parsed.category) {
+            const category = parsed.category.trim();
             const lengthMins = extractDuration(trimmed);
-            if (bc === 'other' || bc === 'unknown') {
-                return { description: trimmed, subcategory: parsed.subcategory, lengthMins };
-            }
             return {
                 description: trimmed,
-                category: parsed.broadCategory,
-                subcategory: parsed.subcategory,
+                category: category,
                 lengthMins
             };
         }
@@ -133,8 +129,7 @@ Message: "${trimmed}"
  * -------------------------------------------------------- */
 async function askFollowupQuestion(
     activity: string,
-    _broadCategory?: string,
-    _subcategory?: string
+    _category?: string
 ): Promise<string | null> {
     const prompt = `You're an assistant. The user said: "${activity}". 
 Decide if you have enough information to log this activity in a category. If yes, return "NO_FOLLOWUP". If not, ask one short, casual follow-up question to get more details. 
@@ -181,7 +176,7 @@ async function callModelExpectJson(
         if (retries > 0) {
             const strictPrompt =
                 prompt +
-                `\n\nIMPORTANT: Return valid JSON only. Example: { "broadCategory": "Food", "subcategory": "Meals" }`;
+                `\n\nIMPORTANT: Return valid JSON only. Example: { "category": "Meals" }`;
             return await callModelExpectJson(strictPrompt, userContent, retries - 1);
         }
     } catch (err) {
@@ -325,8 +320,7 @@ export async function processMessage(userMessage: string): Promise<AgentResponse
 
         const followup = await askFollowupQuestion(
             activityMatch.description,
-            activityMatch.category,
-            activityMatch.subcategory
+            activityMatch.category
         );
         if (followup) {
             const styledFollowup = await styleResponse(followup);
@@ -506,5 +500,76 @@ Return ONLY the question.
 `;
 
     const response = await callModel(prompt, [], toolDefinitions);
-    return response?.content?.trim() || "How’s your day going?";
+    return response?.content?.trim() || "How's your day going?";
+}
+
+export async function recategorizeActivities(): Promise<{ success: boolean; recategorized: number; errors: number }> {
+    await initializeAgent();
+
+    try {
+        // Get all activities with their current categories
+        const activities = await dbQuery(`
+            SELECT a.id, a.description, c.name as current_category
+            FROM activities a
+            LEFT JOIN categories c ON a.category_id = c.id
+            ORDER BY a.timestamp DESC
+        `);
+
+        if (!Array.isArray(activities) || activities.length === 0) {
+            return { success: true, recategorized: 0, errors: 0 };
+        }
+
+        let recategorized = 0;
+        let errors = 0;
+
+        // Get existing categories for the LLM
+        const categoryRows = await dbQuery('SELECT name FROM categories');
+        const existingCategories = Array.isArray(categoryRows)
+            ? categoryRows.map((r: { name?: string }) => r.name).filter((name): name is string => name !== undefined)
+            : [];
+
+        for (const activity of activities) {
+            try {
+                const description = activity.description;
+                if (!description) continue;
+
+                // Use forceRecategorize=true for better categorization
+                const categorizePrompt = CATEGORIZE_PROMPT(description, existingCategories, true);
+                const parsed = await callModelExpectJson(categorizePrompt, description);
+
+                if (parsed && parsed.category) {
+                    const newCategory = parsed.category.trim();
+
+                    // Only update if category changed
+                    if (newCategory !== activity.current_category) {
+                        // Get or create category
+                        let categoryId = undefined;
+                        const existing = await dbQuery('SELECT id FROM categories WHERE name = ?', [newCategory]);
+                        if (existing?.length) {
+                            categoryId = existing[0].id;
+                        } else {
+                            const result = await dbInsert('categories', {
+                                name: newCategory,
+                                description: `Activities related to ${newCategory.toLowerCase()}`
+                            });
+                            categoryId = result?.id;
+                        }
+
+                        if (categoryId) {
+                            await dbUpdate('activities', { category_id: categoryId }, { id: activity.id });
+                            recategorized++;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Error recategorizing activity ${activity.id}:`, error);
+                errors++;
+            }
+        }
+
+        return { success: true, recategorized, errors };
+    } catch (error) {
+        console.error('Recategorization failed:', error);
+        return { success: false, recategorized: 0, errors: 1 };
+    }
 }
