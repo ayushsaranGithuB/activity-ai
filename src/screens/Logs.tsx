@@ -72,7 +72,7 @@ const Logs: React.FC = () => {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-2 bg-neutral-800 rounded-xl ">
+            <CardContent className="p-2 bg-neutral-900 rounded-xl ">
               <div className="space-y-3 pt-2 pl-1">
                 {dateActivities.map((activity) => (
                   <LogItem

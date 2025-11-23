@@ -28,7 +28,7 @@ const LogItem: React.FC<LogItemProps> = ({
     onClick={onClick}
   >
     <CircleDot
-      className="h-6 w-6 absolute left-[-12px] top-0 py-1 bg-neutral-800"
+      className="h-6 w-6 absolute left-[-12px] top-0 py-1 bg-neutral-900"
       color="#666"
     />
     <div className="flex  items-center justify-between gap-3 pb-3">
