@@ -219,12 +219,16 @@ async function handleFollowupConversation(userMessage: string): Promise<AgentRes
     const raw = await generateNaturalResponse(conversationContext.activity, userMessage);
     const styled = await styleResponse(raw);
 
+    // Capture the activityId to return it after clearing context
+    const returnedActivityId = conversationContext.activityId;
+
     conversationContext = null;
 
     await saveMessage('user', userMessage);
     await saveMessage('agent', styled);
 
-    return { content: styled };
+    // Indicate the UI should show post-log actions now that the follow-up completed
+    return { content: styled, showPostLogActions: true, activityId: returnedActivityId };
 }
 
 /** -------------------------------------------------------
@@ -475,22 +479,23 @@ export async function getAIQuestionForTime(): Promise<string> {
 
     // 1. Pull recent activities from SQLite
     const recent = await dbQuery(`
-    SELECT description, timestamp
-    FROM activities
-    WHERE timestamp > datetime('now', '-7 days')
-    ORDER BY timestamp DESC
-  `);
+        SELECT description, timestamp
+        FROM activities
+        WHERE timestamp > datetime('now', '-1 day')
+        ORDER BY timestamp DESC
+        LIMIT 6
+    `);
 
     // 2. Decide context
     const contextJSON = JSON.stringify(recent).slice(0, 5000);
 
     // 3. Build prompt
     const prompt = `
-You are ActivityAgent. Produce ONE short, friendly question for the user.
+You are ActivityAgent. Your goal is to ask what the user is up to. Produce ONE short, friendly question for the user.
 
 The question should:
 - match the time of day
-- relate to their real activities
+- if possible, related to their previous activities, but only if it feels natural
 - help them log something useful
 - be casual, warm, slightly playful
 - never be a list, never multiple options
@@ -629,4 +634,11 @@ export async function recategorizeActivities(): Promise<{ success: boolean; reca
         console.error('Recategorization failed:', error);
         return { success: false, recategorized: 0, errors: 1 };
     }
+}
+
+/**
+ * Reset any in-memory conversation context (used by the UI to fully reset chat state).
+ */
+export function resetConversationContext() {
+    conversationContext = null;
 }

@@ -17,6 +17,7 @@ import {
 import { setupNotifications } from "@/utils/notifications";
 import { Link, useNavigate, Outlet } from "@tanstack/react-router";
 import { getLastActivityTimestamp } from "@/lib/logsActions";
+import { resetConversationContext } from "@/agent/agent";
 
 export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -43,6 +44,15 @@ export default function Layout() {
             <Link
               to="/"
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+              onClick={() => {
+                // clear any in-memory conversation context and notify Chat to reset
+                try {
+                  resetConversationContext();
+                } catch {
+                  console.error("Error resetting conversation context");
+                }
+                window.dispatchEvent(new CustomEvent("chat-reset"));
+              }}
             >
               <img src="/logo.svg" alt="Activity AI Logo" className="h-6 w-6" />
               <span className="font-semibold">Activity AI</span>
@@ -65,7 +75,19 @@ export default function Layout() {
                     <Link
                       key={item.path}
                       to={item.path}
-                      onClick={() => setIsMenuOpen(false)}
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        if (item.path === "/") {
+                          try {
+                            resetConversationContext();
+                          } catch {
+                            console.error(
+                              "Error resetting conversation context"
+                            );
+                          }
+                          window.dispatchEvent(new CustomEvent("chat-reset"));
+                        }
+                      }}
                       className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors`}
                     >
                       <Icon className="h-5 w-5" />

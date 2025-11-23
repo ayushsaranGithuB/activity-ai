@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   processMessage,
   initializeAgent,
-  getAIQuestionForTime,
   AgentResponse,
+  resetConversationContext,
 } from "../agent/agent";
 import {
   Sheet,
@@ -39,6 +39,29 @@ const Chat: React.FC = () => {
   useEffect(() => {
     initializeAgent();
     loadMessages();
+  }, []);
+
+  // Listen for global chat-reset events (fired from header/home links)
+  useEffect(() => {
+    const handler = () => {
+      try {
+        resetConversationContext();
+      } catch {
+        console.error("Error resetting conversation context");
+      }
+      if (postLogTimeoutRef.current) {
+        clearTimeout(postLogTimeoutRef.current);
+        postLogTimeoutRef.current = null;
+      }
+      setPostLogModalOpen(false);
+      setMessages([]);
+      setInput("");
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    };
+
+    window.addEventListener("chat-reset", handler as EventListener);
+    return () =>
+      window.removeEventListener("chat-reset", handler as EventListener);
   }, []);
 
   useEffect(() => {
@@ -166,15 +189,16 @@ const Chat: React.FC = () => {
     }
   };
 
-  const [aiQuestion, setAIQuestion] = useState("What are you up to today?");
+  //  Ai Generated Question Not required now
+  // const [aiQuestion, setAIQuestion] = useState("");
+  // useEffect(() => {
+  //   const fetchAIQuestion = async () => {
+  //     const question = await getAIQuestionForTime();
+  //     setAIQuestion(question);
+  //   };
+  //   fetchAIQuestion();
+  // }, []);
 
-  useEffect(() => {
-    const fetchAIQuestion = async () => {
-      const question = await getAIQuestionForTime();
-      setAIQuestion(question || "What are you up to?");
-    };
-    fetchAIQuestion();
-  }, []);
   return (
     <div className="flex flex-col h-full bg-background flex-1">
       {/* Messages */}
@@ -189,7 +213,8 @@ const Chat: React.FC = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2 max-w-md">
-                <p className="text-lg">{aiQuestion}</p>
+                <h2 className="text-xl font-semibold">What are you up to?</h2>
+                {/* <p className="text-lg">{aiQuestion}</p> */}
               </div>
             </div>
           )}
