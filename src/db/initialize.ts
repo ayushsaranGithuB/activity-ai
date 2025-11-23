@@ -73,4 +73,16 @@ INSERT OR IGNORE INTO schema_meta (version) VALUES (1);
     } catch (error) {
         console.error("Migration failed:", error);
     }
+
+    // Migration: Add sub_category column if it doesn't exist (v2)
+    try {
+        const columns = await db.query("PRAGMA table_info(activities)");
+        const hasSubCategory = columns.values?.some((col: { name: string }) => col.name === 'sub_category');
+        if (!hasSubCategory) {
+            await db.run("ALTER TABLE activities ADD COLUMN sub_category TEXT");
+            console.log("Migration: Added sub_category column to activities table");
+        }
+    } catch (error) {
+        console.error("Migration failed:", error);
+    }
 }

@@ -10,7 +10,7 @@ import {
     backupRestore
 } from './tools';
 import { initDB } from '../db/initialize';
-import { CATEGORIZE_PROMPT } from '../prompts/categorizePrompt';
+import { CATEGORIZE_PROMPT, BATCH_CATEGORIZE_PROMPT } from '../prompts/categorizePrompt';
 import { systemPrompt } from './prompt';
 import { Capacitor } from '@capacitor/core';
 
@@ -21,6 +21,7 @@ export interface AgentResponse {
 
 interface CategoryResult {
     category?: string;
+    sub_category?: string;
 }
 
 let isInitialized = false;
@@ -64,7 +65,7 @@ function extractDuration(message: string): number | undefined {
  * -------------------------------------------------------- */
 async function detectActivity(
     message: string
-): Promise<{ description: string; category?: string; lengthMins?: number } | null> {
+): Promise<{ description: string; category?: string; sub_category?: string; lengthMins?: number } | null> {
     const trimmed = message.trim();
 
     // Hard filters
@@ -108,10 +109,12 @@ Message: "${trimmed}"
 
         if (parsed && parsed.category) {
             const category = parsed.category.trim();
+            const subCategory = parsed.sub_category?.trim();
             const lengthMins = extractDuration(trimmed);
             return {
                 description: trimmed,
                 category: category,
+                sub_category: subCategory,
                 lengthMins
             };
         }
@@ -176,7 +179,7 @@ async function callModelExpectJson(
         if (retries > 0) {
             const strictPrompt =
                 prompt +
-                `\n\nIMPORTANT: Return valid JSON only. Example: { "category": "Meals" }`;
+                `\n\nIMPORTANT: Return valid JSON only. Example: { "category": "Work", "sub_category": "App Development" }`;
             return await callModelExpectJson(strictPrompt, userContent, retries - 1);
         }
     } catch (err) {
@@ -254,7 +257,7 @@ Details: "${details}"
 /** -------------------------------------------------------
  *  LOG ACTIVITY
  * -------------------------------------------------------- */
-async function logActivity(description: string, categoryName?: string, lengthMins?: number): Promise<number | undefined> {
+async function logActivity(description: string, categoryName?: string, lengthMins?: number, subCategory?: string): Promise<number | undefined> {
     try {
         if (!Capacitor.isNativePlatform()) {
             // Web: do not log activities, just return a dummy id
@@ -281,6 +284,7 @@ async function logActivity(description: string, categoryName?: string, lengthMin
             description,
             category_id: categoryId,
             length_mins: lengthMins ?? 30,
+            sub_category: subCategory,
             timestamp: new Date().toISOString()
         });
 
@@ -312,7 +316,7 @@ export async function processMessage(userMessage: string): Promise<AgentResponse
         };
 
         try {
-            const activityId = await logActivity(activityMatch.description, activityMatch.category, activityMatch.lengthMins);
+            const activityId = await logActivity(activityMatch.description, activityMatch.category, activityMatch.lengthMins, activityMatch.sub_category);
             if (activityId) conversationContext.activityId = activityId;
         } catch (err) {
             console.error('Error logging activity:', err);
@@ -509,7 +513,7 @@ export async function recategorizeActivities(): Promise<{ success: boolean; reca
     try {
         // Get all activities with their current categories
         const activities = await dbQuery(`
-            SELECT a.id, a.description, c.name as current_category
+            SELECT a.id, a.description, a.sub_category, c.name as current_category
             FROM activities a
             LEFT JOIN categories c ON a.category_id = c.id
             ORDER BY a.timestamp DESC
@@ -528,42 +532,93 @@ export async function recategorizeActivities(): Promise<{ success: boolean; reca
             ? categoryRows.map((r: { name?: string }) => r.name).filter((name): name is string => name !== undefined)
             : [];
 
-        for (const activity of activities) {
+        // Process in batches of 40
+        const batchSize = 40;
+        for (let i = 0; i < activities.length; i += batchSize) {
+            const batch = activities.slice(i, i + batchSize);
+            const batchTexts = batch.map(a => a.description);
+
             try {
-                const description = activity.description;
-                if (!description) continue;
+                const batchPrompt = BATCH_CATEGORIZE_PROMPT(batchTexts, existingCategories, true);
+                const resp = await callModel(batchPrompt, [{ role: 'user', content: batchTexts.join('\n') }], toolDefinitions);
+                const text = resp?.content?.trim();
 
-                // Use forceRecategorize=true for better categorization
-                const categorizePrompt = CATEGORIZE_PROMPT(description, existingCategories, true);
-                const parsed = await callModelExpectJson(categorizePrompt, description);
+                if (!text) {
+                    console.error('No response from model for batch');
+                    errors += batch.length;
+                    continue;
+                }
 
-                if (parsed && parsed.category) {
-                    const newCategory = parsed.category.trim();
-
-                    // Only update if category changed
-                    if (newCategory !== activity.current_category) {
-                        // Get or create category
-                        let categoryId = undefined;
-                        const existing = await dbQuery('SELECT id FROM categories WHERE name = ?', [newCategory]);
-                        if (existing?.length) {
-                            categoryId = existing[0].id;
-                        } else {
-                            const result = await dbInsert('categories', {
-                                name: newCategory,
-                                description: `Activities related to ${newCategory.toLowerCase()}`
-                            });
-                            categoryId = result?.id;
+                let parsed: { category?: string; sub_category?: string }[];
+                try {
+                    parsed = JSON.parse(text);
+                    if (!Array.isArray(parsed)) {
+                        throw new Error('Response is not an array');
+                    }
+                } catch (e) {
+                    console.error('JSON parse error for batch:', e, 'Response:', text);
+                    // Try to extract array from text
+                    const match = text.match(/\[[\s\S]*\]/);
+                    if (match) {
+                        try {
+                            parsed = JSON.parse(match[0]);
+                        } catch {
+                            console.error('Failed to parse extracted array');
+                            errors += batch.length;
+                            continue;
                         }
+                    } else {
+                        errors += batch.length;
+                        continue;
+                    }
+                }
 
-                        if (categoryId) {
-                            await dbUpdate('activities', { category_id: categoryId }, { id: activity.id });
+                if (parsed.length !== batch.length) {
+                    console.error(`Batch size mismatch: expected ${batch.length}, got ${parsed.length}`);
+                    errors += batch.length;
+                    continue;
+                }
+
+                // Process each result in the batch
+                for (let j = 0; j < batch.length; j++) {
+                    const activity = batch[j];
+                    const result = parsed[j];
+
+                    if (result && result.category) {
+                        const newCategory = result.category.trim();
+                        const newSubCategory = result.sub_category?.trim();
+
+                        // Only update if category changed
+                        if (newCategory !== activity.current_category) {
+                            // Get or create category
+                            let categoryId = undefined;
+                            const existing = await dbQuery('SELECT id FROM categories WHERE name = ?', [newCategory]);
+                            if (existing?.length) {
+                                categoryId = existing[0].id;
+                            } else {
+                                const resultInsert = await dbInsert('categories', {
+                                    name: newCategory,
+                                    description: `Activities related to ${newCategory.toLowerCase()}`
+                                });
+                                categoryId = resultInsert?.id;
+                            }
+
+                            if (categoryId) {
+                                await dbUpdate('activities', { category_id: categoryId, sub_category: newSubCategory }, { id: activity.id });
+                                recategorized++;
+                            }
+                        } else if (newSubCategory && newSubCategory !== activity.sub_category) {
+                            // Update sub_category even if category same
+                            await dbUpdate('activities', { sub_category: newSubCategory }, { id: activity.id });
                             recategorized++;
                         }
+                    } else {
+                        errors++;
                     }
                 }
             } catch (error) {
-                console.error(`Error recategorizing activity ${activity.id}:`, error);
-                errors++;
+                console.error(`Error processing batch starting at index ${i}:`, error);
+                errors += batch.length;
             }
         }
 
