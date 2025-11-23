@@ -1,7 +1,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash } from "lucide-react";
+import { CircleDot, Pencil, Trash } from "lucide-react";
 import clsx from "clsx";
 import { ActivityLogItem } from "@/types";
 
@@ -22,26 +22,31 @@ const LogItem: React.FC<LogItemProps> = ({
 }) => (
   <div
     className={clsx(
-      `flex flex-col mb-2 bg-card hover:bg-muted/50 transition-colors cursor-pointer rounded-lg p-4`,
+      `flex flex-col mb-2 bg-card hover:bg-muted/50 transition-colors cursor-pointer border-l border-neutral-600 px-4 ml-3 py-1 relative`,
       active && "bg-white/10"
     )}
     onClick={onClick}
   >
-    <div className="flex items-start justify-between">
-      <div className="flex-1">
+    <CircleDot
+      className="h-6 w-6 absolute left-[-12px] top-0 py-1 bg-neutral-800"
+      color="#666"
+    />
+    <div className="flex  items-center justify-between gap-3 pb-3">
+      <div className="flex-1 flex-col flex justify-between items-start w-full">
+        {/* Date */}
+        <div className="text-xs text-muted-foreground opacity-50 mb-1">
+          {new Date(activity.timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </div>
         <p className="font-medium">{activity.description}</p>
-        {activity.category && (
-          <Badge variant="outline" className="mt-1 opacity-50">
-            {activity.category}
-          </Badge>
-        )}
       </div>
-      <div className="text-sm text-muted-foreground">
-        {new Date(activity.timestamp).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </div>
+      {activity.category && (
+        <Badge variant="outline" className="mt-1 opacity-50">
+          {activity.category}
+        </Badge>
+      )}
     </div>
     {active && (
       <div className="flex gap-2 mt-4">

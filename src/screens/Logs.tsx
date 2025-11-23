@@ -61,7 +61,7 @@ const Logs: React.FC = () => {
         {Object.entries(groupedActivities).map(([date, dateActivities]) => (
           <Card key={date}>
             <CardHeader className="p-1">
-              <CardTitle className="flex items-center space-x-2 justify-between mb-5 mt-8">
+              <CardTitle className="flex items-center space-x-2 justify-between mb-3 mt-3">
                 <div className="items-center space-x-2 flex">
                   <Calendar className="h-5 w-5" />
                   <span>{date}</span>
@@ -72,8 +72,8 @@ const Logs: React.FC = () => {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-2 bg-neutral-900 rounded-xl ">
-              <div className="space-y-3 pt-0">
+            <CardContent className="p-2 bg-neutral-800 rounded-xl ">
+              <div className="space-y-3 pt-2 pl-1">
                 {dateActivities.map((activity) => (
                   <LogItem
                     key={activity.id}
