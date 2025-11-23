@@ -1,6 +1,28 @@
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { NavigateFn } from '@tanstack/react-router';
 
+// Quiet hours constants and helpers (module scope so reusable)
+const QUIET_START = 23; // 11pm
+const QUIET_END = 8; // 8am
+
+function isQuietHours(d: Date) {
+    const h = d.getHours();
+    return h >= QUIET_START || h < QUIET_END;
+}
+
+function nextAllowedTime(d: Date) {
+    if (!isQuietHours(d)) return d;
+    const next = new Date(d);
+    if (d.getHours() >= QUIET_START) {
+        next.setDate(next.getDate() + 1);
+    }
+    next.setHours(QUIET_END, 0, 0, 0);
+    if (next.getTime() <= d.getTime()) {
+        next.setDate(next.getDate() + 1);
+    }
+    return next;
+}
+
 // Pass the navigate function from TanStack Router
 export async function setupNotifications(navigate: NavigateFn, getLastActivityTimestamp?: () => Promise<Date | null>) {
     const permission = await LocalNotifications.requestPermissions();
@@ -46,6 +68,7 @@ export async function setupNotifications(navigate: NavigateFn, getLastActivityTi
     });
 
     // Dynamic notification: only fire if no activity in last 90 mins
+
     const scheduleDynamicNotification = async () => {
         if (!getLastActivityTimestamp) return;
         const lastActivity = await getLastActivityTimestamp();
@@ -61,7 +84,8 @@ export async function setupNotifications(navigate: NavigateFn, getLastActivityTi
             }
         }
         if (shouldSchedule) {
-            const next = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
+            let next = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
+            next = nextAllowedTime(next);
             await LocalNotifications.schedule({
                 notifications: [{
                     id: 201,
@@ -94,12 +118,16 @@ export async function sendNotification(
         console.log("Notifications permission not granted");
         return;
     }
+    // Schedule immediately 
+    const immediate = new Date(Date.now() + 1000);
+
+
     await LocalNotifications.schedule({
         notifications: [{
             id: Math.floor(Math.random() * 999999) + 1, // Random ID within int range
             title: title,
             body: body,
-            schedule: { at: new Date(Date.now() + 1000) } // 1 second later
+            schedule: { at: immediate }
         }]
     });
     console.log("Notification scheduled successfully");
