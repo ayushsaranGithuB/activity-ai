@@ -4,7 +4,7 @@ import {
   createRoute,
 } from "@tanstack/react-router";
 import Chat from "@/screens/Chat";
-import Logs from "@/screens/Logs";
+import Timeline from "@/screens/Timeline";
 import Trends from "@/screens/Trends";
 import Settings from "@/screens/Settings";
 import Layout from "@/App";
@@ -21,8 +21,8 @@ const chatRoute = createRoute({
 
 const logsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/logs",
-  component: Logs,
+  path: "/timeline",
+  component: Timeline,
 });
 
 const trendsRoute = createRoute({

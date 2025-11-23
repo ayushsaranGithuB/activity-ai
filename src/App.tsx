@@ -3,9 +3,9 @@ import { Toaster } from "react-hot-toast";
 import {
   Menu,
   Home,
-  FileText,
   TrendingUp,
   Settings as SettingsIcon,
+  SquareChartGantt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +28,7 @@ export default function Layout() {
 
   const navigation = [
     { path: "/", name: "Home", icon: Home },
-    { path: "/logs", name: "Logs", icon: FileText },
+    { path: "/timeline", name: "Timeline", icon: SquareChartGantt },
     { path: "/trends", name: "Trends", icon: TrendingUp },
     { path: "/settings", name: "Settings", icon: SettingsIcon },
   ];

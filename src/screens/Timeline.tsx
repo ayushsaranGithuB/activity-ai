@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  SquareChartGantt,
+} from "lucide-react";
 import { ActivityLogItem } from "@/types";
 import LogItem from "@/components/logs/LogItem";
 import EditModal from "@/components/logs/EditModal";
@@ -51,7 +56,7 @@ const Timeline: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileText />
+            <SquareChartGantt />
             Log
           </h1>
         </div>
