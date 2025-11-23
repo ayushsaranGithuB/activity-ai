@@ -2,7 +2,7 @@
 
 export const TREND_SUMMARY_PROMPT = (
     period: string,
-    trends: { category: string; count: number; percentage: number }[]
+    trends: { category: string; totalMinutes: number; percentage: number }[]
 ): string => `You are Activity AI, an agent that summarizes a user's activity patterns in clear, friendly language.
 
 Your task: Provide a short, helpful natural-language summary of the user’s activity for the period: **${period}**.
@@ -12,7 +12,7 @@ ${trends.length > 0
         ? trends
             .map(
                 (t) =>
-                    `- ${t.category}: ${t.count} activities (${t.percentage}%)`
+                    `- ${t.category}: ${t.totalMinutes} minutes (${t.percentage}%)`
             )
             .join("\n")
         : "- No activities recorded."}

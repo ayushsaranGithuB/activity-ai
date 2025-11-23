@@ -4,6 +4,34 @@ import { Settings as SettingsIcon, Database, Bell, Bug } from "lucide-react";
 import { sendNotification } from "@/utils/notifications";
 import { Switch } from "@/components/ui/switch";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { storage } from "@/agent/tools";
+
+const exportDatabase = async () => {
+  try {
+    const activities = await storage.getAllActivities();
+    const categories = await storage.getAllCategories();
+
+    const data = {
+      activities,
+      categories,
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "activity-ai-database.json";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Failed to export database:", error);
+    alert("Failed to export database. Please try again.");
+  }
+};
 
 const Settings: React.FC = () => {
   return (
@@ -91,7 +119,10 @@ const Settings: React.FC = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Download all your activity data as a JSON file.
               </p>
-              <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors">
+              <button
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
+                onClick={exportDatabase}
+              >
                 Export Activities
               </button>
             </div>

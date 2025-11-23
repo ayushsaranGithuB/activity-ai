@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS activities (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   description TEXT NOT NULL,
   category_id INTEGER,
+  length_mins INTEGER, -- Duration of the activity in minutes
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
@@ -51,6 +52,18 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 INSERT OR IGNORE INTO schema_meta (version) VALUES (1);
 `;
     await db.execute(schema);
+
+    // Migration: Add length_mins column if it doesn't exist
+    try {
+        const columns = await db.query("PRAGMA table_info(activities)");
+        const hasLengthMins = columns.values?.some((col: any) => col.name === 'length_mins');
+        if (!hasLengthMins) {
+            await db.run("ALTER TABLE activities ADD COLUMN length_mins INTEGER DEFAULT 30");
+            console.log("Migration: Added length_mins column to activities table");
+        }
+    } catch (error) {
+        console.error("Migration failed:", error);
+    }
 }
 
 export async function dbInsert(table: string, data: Record<string, unknown>) {
@@ -235,3 +248,27 @@ export async function backupRestore(filename: string) {
         },
     },
 ];
+
+export const storage = {
+    async getAllActivities() {
+        try {
+            return await dbQuery(
+                "SELECT id, description, category_id, length_mins, timestamp FROM activities ORDER BY timestamp DESC"
+            );
+        } catch (error) {
+            console.error("Failed to fetch activities:", error);
+            return [];
+        }
+    },
+
+    async getAllCategories() {
+        try {
+            return await dbQuery(
+                "SELECT id, name, description, created_at FROM categories ORDER BY id ASC"
+            );
+        } catch (error) {
+            console.error("Failed to fetch categories:", error);
+            return [];
+        }
+    },
+};

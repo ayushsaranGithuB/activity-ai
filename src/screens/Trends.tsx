@@ -8,7 +8,7 @@ import Spinner from "@/components/ui/spinner";
 
 interface TrendData {
   category: string;
-  count: number;
+  totalMinutes: number;
   percentage: number;
 }
 
@@ -33,18 +33,21 @@ const TrendCard = ({
     <CardContent>
       {trends.length > 0 ? (
         <div className="space-y-3">
-          {trends.slice(0, 5).map((trend) => (
+          {trends.map((trend) => (
             <div
               key={trend.category}
-              className="flex items-center justify-between"
+              className="flex items-center justify-between "
             >
-              <div className="flex items-center space-x-3">
-                <div className={`w-2 h-2 rounded-full ${color}`} />
+              <div className="flex items-center space-x-3 w-full">
                 <span className="font-medium">{trend.category}</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div
+                className={`h-[2px] rounded-md bg-white/30`}
+                style={{ width: `${trend.percentage}%` }}
+              />
+              <div className="flex items-center space-x-2 min-w-[120px]">
                 <span className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-md">
-                  {trend.count}
+                  {trend.totalMinutes} min
                 </span>
                 <span className="text-sm text-muted-foreground">
                   {trend.percentage}%
@@ -52,11 +55,6 @@ const TrendCard = ({
               </div>
             </div>
           ))}
-          {trends.length > 5 && (
-            <p className="text-sm text-muted-foreground text-center pt-2">
-              +{trends.length - 5} more categories
-            </p>
-          )}
         </div>
       ) : (
         <div className="text-center py-8">
@@ -82,7 +80,11 @@ const Trends: React.FC = () => {
 
   const computeTrends = useCallback(
     (
-      activities: { category_id?: number; timestamp: string }[],
+      activities: {
+        category_id?: number;
+        timestamp: string;
+        length_mins?: number;
+      }[],
       categories: { id: number; name: string }[],
       period: "today" | "week" | "month"
     ): TrendData[] => {
@@ -109,23 +111,27 @@ const Trends: React.FC = () => {
         return activityDate >= startDate;
       });
 
-      const categoryCounts: { [key: string]: number } = {};
+      const categoryTotals: { [key: string]: number } = {};
       filteredActivities.forEach((activity) => {
         const categoryName = activity.category_id
           ? categories.find((c) => c.id === activity.category_id)?.name ||
             "Uncategorized"
           : "Uncategorized";
-        categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+        categoryTotals[categoryName] =
+          (categoryTotals[categoryName] || 0) + (activity.length_mins || 0);
       });
 
-      const total = filteredActivities.length;
-      const trends: TrendData[] = Object.entries(categoryCounts)
-        .map(([category, count]) => ({
+      const total = Object.values(categoryTotals).reduce(
+        (sum, mins) => sum + mins,
+        0
+      );
+      const trends: TrendData[] = Object.entries(categoryTotals)
+        .map(([category, totalMinutes]) => ({
           category,
-          count,
-          percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+          totalMinutes,
+          percentage: total > 0 ? Math.round((totalMinutes / total) * 100) : 0,
         }))
-        .sort((a, b) => b.count - a.count);
+        .sort((a, b) => b.totalMinutes - a.totalMinutes);
 
       return trends;
     },
@@ -144,7 +150,7 @@ const Trends: React.FC = () => {
 
           activities =
             (await tools.dbQuery(
-              "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
+              "SELECT id, description, category_id, length_mins, timestamp FROM activities ORDER BY timestamp DESC"
             )) || [];
 
           categories =
@@ -176,6 +182,30 @@ const Trends: React.FC = () => {
         setWeekTrends(week);
         setMonthTrends(month);
 
+        // Check cache for AI summaries
+        const cacheKey = "aiSummariesCache";
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (parsed.summaries && parsed.timestamp) {
+              const { summaries, timestamp } = parsed;
+              const now = Date.now();
+              if (now - timestamp < 30 * 60 * 1000) {
+                // 30 minutes
+                setAiToday(summaries.today || "");
+                setAiWeek(summaries.week || "");
+                setAiMonth(summaries.month || "");
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (error) {
+            console.warn("Invalid cache data, regenerating summaries:", error);
+            localStorage.removeItem(cacheKey); // Clear invalid cache
+          }
+        }
+
         // 🔥 Generate AI summaries
         const todayPrompt = TREND_SUMMARY_PROMPT("today", today);
         const weekPrompt = TREND_SUMMARY_PROMPT("this week", week);
@@ -184,6 +214,14 @@ const Trends: React.FC = () => {
         const todayRes = await callModel(todayPrompt, [], []);
         const weekRes = await callModel(weekPrompt, [], []);
         const monthRes = await callModel(monthPrompt, [], []);
+
+        const summaries = {
+          today: todayRes.content,
+          week: weekRes.content,
+          month: monthRes.content,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(summaries));
 
         setAiToday(todayRes.content);
         setAiWeek(weekRes.content);
@@ -224,7 +262,7 @@ const Trends: React.FC = () => {
           </div>
         )}
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="flex flex-col gap-6 ">
         <TrendCard
           title="Today"
           trends={todayTrends}

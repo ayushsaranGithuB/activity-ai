@@ -43,11 +43,28 @@ export async function initializeAgent() {
 }
 
 /** -------------------------------------------------------
+ *  DURATION EXTRACTION
+ * -------------------------------------------------------- */
+function extractDuration(message: string): number | undefined {
+    const durationRegex = /(\d+)\s*(min|minute|minutes|hour|hours|h)/i;
+    const match = message.match(durationRegex);
+    if (match) {
+        const value = parseInt(match[1], 10);
+        const unit = match[2].toLowerCase();
+        if (unit.startsWith('h')) {
+            return value * 60; // Convert hours to minutes
+        }
+        return value;
+    }
+    return undefined;
+}
+
+/** -------------------------------------------------------
  *  NEW & IMPROVED ACTIVITY DETECTION (99% LLM-DRIVEN)
  * -------------------------------------------------------- */
 async function detectActivity(
     message: string
-): Promise<{ description: string; category?: string; subcategory?: string } | null> {
+): Promise<{ description: string; category?: string; subcategory?: string; lengthMins?: number } | null> {
     const trimmed = message.trim();
 
     // Hard filters
@@ -91,13 +108,15 @@ Message: "${trimmed}"
 
         if (parsed && parsed.broadCategory) {
             const bc = parsed.broadCategory.trim().toLowerCase();
+            const lengthMins = extractDuration(trimmed);
             if (bc === 'other' || bc === 'unknown') {
-                return { description: trimmed, subcategory: parsed.subcategory };
+                return { description: trimmed, subcategory: parsed.subcategory, lengthMins };
             }
             return {
                 description: trimmed,
                 category: parsed.broadCategory,
-                subcategory: parsed.subcategory
+                subcategory: parsed.subcategory,
+                lengthMins
             };
         }
     } catch (error) {
@@ -105,7 +124,8 @@ Message: "${trimmed}"
     }
 
     // STEP 3 — Minimal fallback
-    return { description: trimmed };
+    const lengthMins = extractDuration(trimmed);
+    return { description: trimmed, lengthMins };
 }
 
 /** -------------------------------------------------------
@@ -239,7 +259,7 @@ Details: "${details}"
 /** -------------------------------------------------------
  *  LOG ACTIVITY
  * -------------------------------------------------------- */
-async function logActivity(description: string, categoryName?: string): Promise<number | undefined> {
+async function logActivity(description: string, categoryName?: string, lengthMins?: number): Promise<number | undefined> {
     try {
         if (!Capacitor.isNativePlatform()) {
             // Web: do not log activities, just return a dummy id
@@ -265,6 +285,7 @@ async function logActivity(description: string, categoryName?: string): Promise<
         const insertResult = await dbInsert('activities', {
             description,
             category_id: categoryId,
+            length_mins: lengthMins ?? 30,
             timestamp: new Date().toISOString()
         });
 
@@ -296,7 +317,7 @@ export async function processMessage(userMessage: string): Promise<AgentResponse
         };
 
         try {
-            const activityId = await logActivity(activityMatch.description, activityMatch.category);
+            const activityId = await logActivity(activityMatch.description, activityMatch.category, activityMatch.lengthMins);
             if (activityId) conversationContext.activityId = activityId;
         } catch (err) {
             console.error('Error logging activity:', err);
