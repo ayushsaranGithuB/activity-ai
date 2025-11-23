@@ -105,29 +105,55 @@ const Trends: React.FC = () => {
         sub_category?: string;
       }[],
       categories: { id: number; name: string }[],
-      period: "today" | "week" | "month"
+      period:
+        | "today"
+        | "yesterday"
+        | "week"
+        | "lastWeek"
+        | "month"
+        | "lastMonth"
     ): TrendData[] => {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       let startDate: Date;
+      let endDate: Date | null = null;
       switch (period) {
         case "today":
           startDate = today;
+          break;
+        case "yesterday":
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - 1);
+          endDate = new Date(today);
           break;
         case "week":
           startDate = new Date(today);
           startDate.setDate(today.getDate() - 7);
           break;
+        case "lastWeek":
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - 14);
+          endDate = new Date(today);
+          endDate.setDate(today.getDate() - 7);
+          break;
         case "month":
           startDate = new Date(today);
           startDate.setMonth(today.getMonth() - 1);
+          break;
+        case "lastMonth":
+          startDate = new Date(today);
+          startDate.setMonth(today.getMonth() - 2);
+          endDate = new Date(today);
+          endDate.setMonth(today.getMonth() - 1);
           break;
       }
 
       const filteredActivities = activities.filter((activity) => {
         const activityDate = new Date(activity.timestamp);
-        return activityDate >= startDate;
+        const afterStart = activityDate >= startDate;
+        const beforeEnd = endDate ? activityDate < endDate : true;
+        return afterStart && beforeEnd;
       });
 
       const categoryData: {
@@ -220,6 +246,23 @@ const Trends: React.FC = () => {
         const week = computeTrends(activities, categories, "week");
         const month = computeTrends(activities, categories, "month");
 
+        // Compute previous periods for comparison
+        const yesterday = computeTrends(activities, categories, "yesterday");
+        const lastWeek = computeTrends(activities, categories, "lastWeek");
+        const lastMonth = computeTrends(activities, categories, "lastMonth");
+
+        // Filter today's activities for detailed AI summary
+        const now = new Date();
+        const startOfToday = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
+        const todayActivities = activities.filter((activity) => {
+          const activityDate = new Date(activity.timestamp);
+          return activityDate >= startOfToday;
+        });
+
         setTodayTrends(today);
         setWeekTrends(week);
         setMonthTrends(month);
@@ -233,8 +276,8 @@ const Trends: React.FC = () => {
             if (parsed.summaries && parsed.timestamp) {
               const { summaries, timestamp } = parsed;
               const now = Date.now();
-              if (now - timestamp < 30 * 60 * 1000) {
-                // 30 minutes
+              if (now - timestamp < 10 * 60 * 1000) {
+                // 10 minutes
                 setAiToday(summaries.today || "");
                 setAiWeek(summaries.week || "");
                 setAiMonth(summaries.month || "");
@@ -249,9 +292,60 @@ const Trends: React.FC = () => {
         }
 
         // 🔥 Generate AI summaries
-        const todayPrompt = TREND_SUMMARY_PROMPT("today", today);
-        const weekPrompt = TREND_SUMMARY_PROMPT("this week", week);
-        const monthPrompt = TREND_SUMMARY_PROMPT("this month", month);
+        const todayPrompt = `You are Activity AI, an agent that summarizes a user's activity patterns in clear, friendly language.
+
+Your task: Provide a short, helpful natural-language summary of the user's activity for the period: **today**.
+
+Activity Data:
+${
+  todayActivities.length > 0
+    ? todayActivities
+        .map((activity) => {
+          const categoryName = activity.category_id
+            ? categories.find((c) => c.id === activity.category_id)?.name ||
+              "Uncategorized"
+            : activity.category || "Uncategorized";
+          return `- ${activity.description || "Activity"}: ${categoryName} > ${
+            activity.sub_category || "General"
+          }, ${activity.length_mins || 0} minutes`;
+        })
+        .join("\n")
+    : "- No activities recorded."
+}
+${
+  yesterday.length > 0
+    ? `
+
+Yesterday's Activity Data (for comparison):
+${yesterday
+  .map((t) => `- ${t.category}: ${t.totalMinutes} minutes (${t.percentage}%)`)
+  .join("\n")}`
+    : ""
+}
+
+Guidelines:
+- Write a concise summary (1–3 sentences).
+- Tone: friendly, supportive, human.
+- Highlight the most active category if one clearly dominates.
+- If activity is spread out, mention the balance.
+- If there is no data, respond with an encouraging message.
+- If yesterday's data is available, compare and contrast with today (e.g., more/less time in certain categories).
+- Do NOT restate raw numbers verbatim unless meaningful.
+- Focus on trends, not exact percentages.
+- Avoid bullet points in your answer.
+- Write as a single paragraph.
+- No formatting like **bold**, no lists, no JSON.
+- Return ONLY the final summary sentence(s).`;
+        const weekPrompt = TREND_SUMMARY_PROMPT(
+          "this week",
+          week,
+          lastWeek.length > 0 ? lastWeek : undefined
+        );
+        const monthPrompt = TREND_SUMMARY_PROMPT(
+          "this month",
+          month,
+          lastMonth.length > 0 ? lastMonth : undefined
+        );
 
         const todayRes = await callModel(todayPrompt, [], []);
         const weekRes = await callModel(weekPrompt, [], []);

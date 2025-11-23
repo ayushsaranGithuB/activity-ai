@@ -2,7 +2,8 @@
 
 export const TREND_SUMMARY_PROMPT = (
     period: string,
-    trends: { category: string; totalMinutes: number; percentage: number }[]
+    trends: { category: string; totalMinutes: number; percentage: number }[],
+    previousTrends?: { category: string; totalMinutes: number; percentage: number }[]
 ): string => `You are Activity AI, an agent that summarizes a user's activity patterns in clear, friendly language.
 
 Your task: Provide a short, helpful natural-language summary of the user’s activity for the period: **${period}**.
@@ -16,6 +17,17 @@ ${trends.length > 0
             )
             .join("\n")
         : "- No activities recorded."}
+${previousTrends && previousTrends.length > 0
+        ? `
+
+Previous Period Data (for comparison):
+${previousTrends
+            .map(
+                (t) =>
+                    `- ${t.category}: ${t.totalMinutes} minutes (${t.percentage}%)`
+            )
+            .join("\n")}`
+        : ""}
 
 Guidelines:
 - Write a concise summary (1–3 sentences).
@@ -23,6 +35,7 @@ Guidelines:
 - Highlight the most active category if one clearly dominates.
 - If activity is spread out, mention the balance.
 - If there is no data, respond with an encouraging message.
+- If previous data is available, compare and contrast with the current period (e.g., more/less time in certain categories).
 - Do NOT restate raw numbers verbatim unless meaningful.
 - Focus on trends, not exact percentages.
 - Avoid bullet points in your answer.
