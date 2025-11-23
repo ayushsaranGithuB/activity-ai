@@ -140,6 +140,7 @@ npm run cap:open-android
 ```
 
 From Android Studio, you can:
+
 - Build a debug APK
 - Build a release APK
 - Run directly on a device
@@ -149,6 +150,7 @@ From Android Studio, you can:
 ## 🤖 AI Integration
 
 The app uses Google Gemini AI for:
+
 - Activity categorization
 - Conversational responses
 - Trend summaries
