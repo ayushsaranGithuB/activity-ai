@@ -2,5 +2,11 @@
   "appId": "com.activityai",
   "appName": "Activity AI",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_notification",
+      "iconColor": "#FFFFFF"
+    }
+  }
 }
