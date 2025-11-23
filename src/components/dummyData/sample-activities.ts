@@ -14,7 +14,7 @@ export const sample_activities = [
   { id: 11, description: "Played chess online", category_id: 5, timestamp: new Date().toISOString(), category: "Entertainment" },
   { id: 12, description: "Prepared dinner", category_id: 2, timestamp: new Date().toISOString(), category: "Meals" },
   { id: 13, description: "Went for a walk", category_id: 1, timestamp: new Date().toISOString(), category: "Exercise" },
-  { id: 14, description: "Watched a movie", category_id: 5, timestamp: new Date().toISOString(), category: "Entertainment" },
-  { id: 15, description: "Did laundry", category_id: 6, timestamp: new Date().toISOString(), category: "Household" },
-  { id: 16, description: "Meditated", category_id: 8, timestamp: new Date().toISOString(), category: "Health" },
+  { id: 14, description: "Watched a movie", category_id: 5, timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), category: "Entertainment" },
+  { id: 15, description: "Did laundry", category_id: 6, timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), category: "Household" },
+  { id: 16, description: "Meditated", category_id: 8, timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), category: "Health" },
 ];

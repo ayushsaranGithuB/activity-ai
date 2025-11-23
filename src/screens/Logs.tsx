@@ -61,16 +61,19 @@ const Logs: React.FC = () => {
         {Object.entries(groupedActivities).map(([date, dateActivities]) => (
           <Card key={date}>
             <CardHeader className="p-1">
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>{date}</span>
-                <Badge variant="secondary">
+              <CardTitle className="flex items-center space-x-2 justify-between mb-5 mt-8">
+                <div className="items-center space-x-2 flex">
+                  <Calendar className="h-5 w-5" />
+                  <span>{date}</span>
+                </div>
+
+                <Badge variant="secondary" className="opacity-60">
                   {dateActivities.length} activities
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
-              <div className="space-y-3">
+            <CardContent className="p-2 bg-neutral-900 rounded-xl ">
+              <div className="space-y-3 pt-0">
                 {dateActivities.map((activity) => (
                   <LogItem
                     key={activity.id}

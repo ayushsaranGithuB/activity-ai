@@ -22,7 +22,7 @@ const LogItem: React.FC<LogItemProps> = ({
 }) => (
   <div
     className={clsx(
-      `flex flex-col my-6 bg-card hover:bg-muted/50 transition-colors cursor-pointer rounded-lg p-4`,
+      `flex flex-col mb-2 bg-card hover:bg-muted/50 transition-colors cursor-pointer rounded-lg p-4`,
       active && "bg-white/10"
     )}
     onClick={onClick}
