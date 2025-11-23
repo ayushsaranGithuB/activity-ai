@@ -3,12 +3,22 @@ import {
   processMessage,
   initializeAgent,
   getAIQuestionForTime,
+  AgentResponse,
 } from "../agent/agent";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+} from "@/components/ui/sheet";
+import { useNavigate } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Bot } from "lucide-react";
+import { Send, Bot, SquareChartGantt, CirclePlus } from "lucide-react";
 import { Keyboard } from "@capacitor/keyboard";
 import { Capacitor } from "@capacitor/core";
 import { Message } from "@/types";
@@ -19,9 +29,12 @@ const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [postLogModalOpen, setPostLogModalOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
+  const postLogTimeoutRef = useRef<number | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     initializeAgent();
@@ -76,6 +89,18 @@ const Chat: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, agentMessage]);
+      if ((response as AgentResponse).showPostLogActions) {
+        // clear any existing pending timeout
+        if (postLogTimeoutRef.current) {
+          clearTimeout(postLogTimeoutRef.current);
+          postLogTimeoutRef.current = null;
+        }
+        // open the post-log modal after a 3 second delay
+        postLogTimeoutRef.current = window.setTimeout(() => {
+          setPostLogModalOpen(true);
+          postLogTimeoutRef.current = null;
+        }, 3000);
+      }
     } catch (error) {
       console.error("Error processing message:", error);
       // Add error message
@@ -98,6 +123,37 @@ const Chat: React.FC = () => {
       handleSendMessage();
     }
   };
+
+  const handleViewTimeline = () => {
+    if (postLogTimeoutRef.current) {
+      clearTimeout(postLogTimeoutRef.current);
+      postLogTimeoutRef.current = null;
+    }
+    setPostLogModalOpen(false);
+    navigate({ to: "/timeline" });
+  };
+
+  const handleLogAnother = () => {
+    if (postLogTimeoutRef.current) {
+      clearTimeout(postLogTimeoutRef.current);
+      postLogTimeoutRef.current = null;
+    }
+    setPostLogModalOpen(false);
+    // Reset the chat/home input state so user can log another activity
+    setMessages([]);
+    setInput("");
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  };
+
+  // cleanup any pending timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (postLogTimeoutRef.current) {
+        clearTimeout(postLogTimeoutRef.current);
+        postLogTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -240,6 +296,37 @@ const Chat: React.FC = () => {
           </div>
         </div>
       </div>
+      <Sheet open={postLogModalOpen} onOpenChange={setPostLogModalOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-w-md mx-auto rounded-t-lg border-t-0"
+        >
+          <SheetHeader>
+            <SheetTitle>Activity logged</SheetTitle>
+            <SheetDescription>What would you like to do next?</SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-4 flex gap-6 flex-col py-4">
+            <Button
+              onClick={handleViewTimeline}
+              size="sm"
+              className="flex-1 border text-xl p-3 rounded-full flex space-x-3 cursor-pointer"
+            >
+              <SquareChartGantt className="!w-[24px] !h-[24px]" />
+              View timeline
+            </Button>
+            <Button
+              onClick={handleLogAnother}
+              size="sm"
+              className="flex-1 border text-xl p-3 rounded-full flex space-x-3 cursor-pointer"
+            >
+              <CirclePlus className="!w-[24px] !h-[24px]" />
+              Log another Activity
+            </Button>
+          </div>
+          <SheetFooter />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

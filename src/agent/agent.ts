@@ -17,6 +17,8 @@ import { Capacitor } from '@capacitor/core';
 
 export interface AgentResponse {
     content: string;
+    showPostLogActions?: boolean;
+    activityId?: number;
 }
 
 interface CategoryResult {
@@ -332,7 +334,7 @@ export async function processMessage(userMessage: string): Promise<AgentResponse
             return { content: styledFollowup };
         }
         const fallbackResponse = await styleResponse("Got it! Logging this activity.");
-        return { content: fallbackResponse };
+        return { content: fallbackResponse, showPostLogActions: true, activityId: conversationContext.activityId };
     }
 
     // GENERAL CHAT MODE
