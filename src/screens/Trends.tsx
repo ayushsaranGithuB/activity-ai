@@ -3,8 +3,8 @@ import { Capacitor } from "@capacitor/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Calendar, Activity } from "lucide-react";
 import { TREND_SUMMARY_PROMPT } from "@/prompts/trendSummaryPrompt";
+import { TODAY_SUMMARY_PROMPT } from "@/prompts/todayPrompt";
 import { callModel } from "@/agent/model";
-import Spinner from "@/components/ui/spinner";
 
 interface TrendData {
   category: string;
@@ -292,50 +292,11 @@ const Trends: React.FC = () => {
         }
 
         // 🔥 Generate AI summaries
-        const todayPrompt = `You are Activity AI, an agent that summarizes a user's activity patterns in clear, friendly language.
-
-Your task: Provide a short, helpful natural-language summary of the user's activity for the period: **today**.
-
-Activity Data:
-${
-  todayActivities.length > 0
-    ? todayActivities
-        .map((activity) => {
-          const categoryName = activity.category_id
-            ? categories.find((c) => c.id === activity.category_id)?.name ||
-              "Uncategorized"
-            : activity.category || "Uncategorized";
-          return `- ${activity.description || "Activity"}: ${categoryName} > ${
-            activity.sub_category || "General"
-          }, ${activity.length_mins || 0} minutes`;
-        })
-        .join("\n")
-    : "- No activities recorded."
-}
-${
-  yesterday.length > 0
-    ? `
-
-Yesterday's Activity Data (for comparison):
-${yesterday
-  .map((t) => `- ${t.category}: ${t.totalMinutes} minutes (${t.percentage}%)`)
-  .join("\n")}`
-    : ""
-}
-
-Guidelines:
-- Write a concise summary (1–3 sentences).
-- Tone: friendly, supportive, human.
-- Highlight the most active category if one clearly dominates.
-- If activity is spread out, mention the balance.
-- If there is no data, respond with an encouraging message.
-- If yesterday's data is available, compare and contrast with today (e.g., more/less time in certain categories).
-- Do NOT restate raw numbers verbatim unless meaningful.
-- Focus on trends, not exact percentages.
-- Avoid bullet points in your answer.
-- Write as a single paragraph.
-- No formatting like **bold**, no lists, no JSON.
-- Return ONLY the final summary sentence(s).`;
+        const todayPrompt = TODAY_SUMMARY_PROMPT(
+          todayActivities,
+          categories,
+          yesterday.length > 0 ? yesterday : undefined
+        );
         const weekPrompt = TREND_SUMMARY_PROMPT(
           "this week",
           week,
@@ -371,15 +332,15 @@ Guidelines:
     loadTrends();
   }, [computeTrends]);
 
-  // if (loading) {
-  return (
-    <div className="container py-10 space-y-1 flex items-center justify-center flex-col">
-      {/* <Spinner /> */}
-      <img src="/logo-animated.svg" alt="" width={200} />
-      <h2 className="text-xl font-bold animate-pulse">Computing trends...</h2>
-    </div>
-  );
-  // }
+  if (loading) {
+    return (
+      <div className="container py-10 space-y-1 flex items-center justify-center flex-col">
+        {/* <Spinner /> */}
+        <img src="/logo-animated.svg" alt="" width={200} />
+        <h2 className="text-xl font-bold animate-pulse">Computing trends...</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-6 space-y-6">
