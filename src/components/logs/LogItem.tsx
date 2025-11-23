@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CircleDot, Pencil, Trash } from "lucide-react";
 import clsx from "clsx";
 import { ActivityLogItem } from "@/types";
+import { formatMinutes } from "@/lib/utils";
 
 interface LogItemProps {
   activity: ActivityLogItem;
@@ -39,14 +40,30 @@ const LogItem: React.FC<LogItemProps> = ({
             hour: "2-digit",
             minute: "2-digit",
           })}
+          {activity.length_mins != null && (
+            <span className="ml-2 text-xs opacity-60">
+              • {formatMinutes(activity.length_mins)}
+            </span>
+          )}
         </div>
-        <p className="font-medium">{activity.description}</p>
+        <div>
+          <p className="font-medium">{activity.description}</p>
+          {activity.sub_category && (
+            <div className="text-xs text-muted-foreground opacity-60 mt-1 ">
+              {activity.sub_category && (
+                <div className="">{activity.sub_category}</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-      {activity.category && (
-        <Badge variant="outline" className="mt-1 opacity-50">
-          {activity.category}
-        </Badge>
-      )}
+      <div>
+        {activity.category && (
+          <Badge variant="outline" className="mt-1 opacity-50">
+            {activity.category}
+          </Badge>
+        )}
+      </div>
     </div>
     {active && (
       <div className="flex gap-2 mt-4">

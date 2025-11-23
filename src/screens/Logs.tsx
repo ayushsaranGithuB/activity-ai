@@ -23,6 +23,9 @@ const Timeline: React.FC = () => {
   );
   const [editDescription, setEditDescription] = useState("");
   const [editTimestamp, setEditTimestamp] = useState("");
+  const [editLengthMins, setEditLengthMins] = useState<number | undefined>(
+    undefined
+  );
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteActivityId, setDeleteActivityId] = useState<number | null>(null);
   // Fetch activities on mount
@@ -83,6 +86,7 @@ const Timeline: React.FC = () => {
                     onEdit={() => {
                       setEditActivity(activity);
                       setEditDescription(activity.description);
+                      setEditLengthMins(activity.length_mins ?? 30);
                       // Convert timestamp to local datetime-local format
                       const d = new Date(activity.timestamp);
                       const pad = (n: number) => n.toString().padStart(2, "0");
@@ -104,6 +108,7 @@ const Timeline: React.FC = () => {
                   open={editModalOpen && !!editActivity}
                   description={editDescription}
                   timestamp={editTimestamp}
+                  lengthMins={editLengthMins}
                   onDescriptionChange={setEditDescription}
                   onTimestampChange={(val) => {
                     // Convert local datetime-local to ISO string
@@ -111,6 +116,12 @@ const Timeline: React.FC = () => {
                     setEditTimestamp(val);
                     setEditActivity((prev) =>
                       prev ? { ...prev, timestamp: local.toISOString() } : prev
+                    );
+                  }}
+                  onLengthChange={(mins: number) => {
+                    setEditLengthMins(mins);
+                    setEditActivity((prev) =>
+                      prev ? { ...prev, length_mins: mins } : prev
                     );
                   }}
                   onCancel={() => {
@@ -122,7 +133,8 @@ const Timeline: React.FC = () => {
                       await updateActivity(
                         editActivity.id,
                         editDescription,
-                        editActivity.timestamp
+                        editActivity.timestamp,
+                        editLengthMins
                       );
                       setEditModalOpen(false);
                       setEditActivity(null);

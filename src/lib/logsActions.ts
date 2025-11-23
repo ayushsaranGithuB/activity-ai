@@ -15,15 +15,17 @@ export async function fetchActivities(): Promise<ActivityLogItem[]> {
     if (Capacitor.isNativePlatform()) {
         try {
             const rows = await dbQuery(
-                `SELECT a.id, a.description, a.category_id, a.timestamp, c.name as category 
+                `SELECT a.id, a.description, a.category_id, a.length_mins, a.sub_category, a.timestamp, c.name as category 
                  FROM activities a
                  LEFT JOIN categories c ON a.category_id = c.id
                  ORDER BY a.timestamp DESC`
             );
-            return rows?.map((a: ActivityLogItem) => ({
+            return rows?.map((a: any) => ({
                 id: a.id,
                 description: a.description,
                 category_id: a.category_id,
+                length_mins: a.length_mins,
+                sub_category: a.sub_category,
                 timestamp: a.timestamp,
                 category: a.category || undefined,
             })) || [];
@@ -36,11 +38,18 @@ export async function fetchActivities(): Promise<ActivityLogItem[]> {
     }
 }
 
-export async function updateActivity(id: number, description: string, timestamp: string) {
-    await dbQuery(
-        `UPDATE activities SET description = ?, timestamp = ? WHERE id = ?`,
-        [description, timestamp, id]
-    );
+export async function updateActivity(id: number, description: string, timestamp: string, length_mins?: number) {
+    if (length_mins != null) {
+        await dbQuery(
+            `UPDATE activities SET description = ?, timestamp = ?, length_mins = ? WHERE id = ?`,
+            [description, timestamp, length_mins, id]
+        );
+    } else {
+        await dbQuery(
+            `UPDATE activities SET description = ?, timestamp = ? WHERE id = ?`,
+            [description, timestamp, id]
+        );
+    }
 }
 
 export async function deleteActivity(id: number) {

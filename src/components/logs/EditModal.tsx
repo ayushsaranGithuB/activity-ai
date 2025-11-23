@@ -5,8 +5,10 @@ interface EditModalProps {
   open: boolean;
   description: string;
   timestamp: string;
+  lengthMins?: number;
   onDescriptionChange: (desc: string) => void;
   onTimestampChange: (ts: string) => void;
+  onLengthChange?: (mins: number) => void;
   onCancel: () => void;
   onSave: () => void;
 }
@@ -15,6 +17,8 @@ const EditModal: React.FC<EditModalProps> = ({
   open,
   description,
   timestamp,
+  lengthMins,
+  onLengthChange,
   onDescriptionChange,
   onTimestampChange,
   onCancel,
@@ -38,6 +42,14 @@ const EditModal: React.FC<EditModalProps> = ({
           className="w-full border px-2 py-1 mb-4"
           value={timestamp}
           onChange={(e) => onTimestampChange(e.target.value)}
+        />
+        <label className="block mb-2">Duration (minutes):</label>
+        <input
+          type="number"
+          min={0}
+          className="w-full border px-2 py-1 mb-4"
+          value={lengthMins ?? ""}
+          onChange={(e) => onLengthChange?.(Number(e.target.value))}
         />
         <div className="flex gap-2 justify-end">
           <Button variant="outline" onClick={onCancel}>

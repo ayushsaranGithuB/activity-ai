@@ -13,15 +13,7 @@ interface TrendData {
   subcategories: { name: string; totalMinutes: number; percentage: number }[];
 }
 
-// Format minutes into "Hh Mm" when >= 60, otherwise show "Xm".
-function formatMinutes(minutes: number): string {
-  if (!minutes && minutes !== 0) return "0m";
-  const mins = Math.max(0, Math.round(minutes));
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  const rem = mins % 60;
-  return rem === 0 ? `${hrs}h` : `${hrs}h ${rem}m`;
-}
+import { formatMinutes } from "@/lib/utils";
 
 const TrendCard = ({
   title,

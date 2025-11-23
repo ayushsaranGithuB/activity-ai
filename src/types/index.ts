@@ -5,6 +5,8 @@ export interface ActivityLogItem {
     category_id?: number;
     timestamp: string;
     category?: string; // Optional category name for display
+    length_mins?: number; // optional duration in minutes
+    sub_category?: string; // optional sub-category text
 }
 // Activity AI - Type Definitions
 
