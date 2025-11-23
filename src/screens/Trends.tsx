@@ -373,8 +373,9 @@ Guidelines:
 
   if (loading) {
     return (
-      <div className="container py-6 space-y-6">
+      <div className="container py-6 space-y-6 flex items-center justify-center flex-col">
         <Spinner />
+        <h2 className="text-xl font-bold animate-pulse">Computing trends...</h2>
       </div>
     );
   }
