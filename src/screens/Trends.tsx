@@ -142,13 +142,15 @@ const Trends: React.FC = () => {
         if (Capacitor.isNativePlatform()) {
           const tools = await import("@/agent/tools");
 
-          activities = await tools.dbQuery(
-            "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
-          );
+          activities =
+            (await tools.dbQuery(
+              "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
+            )) || [];
 
-          categories = await tools.dbQuery(
-            "SELECT id, name FROM categories ORDER BY id ASC"
-          );
+          categories =
+            (await tools.dbQuery(
+              "SELECT id, name FROM categories ORDER BY id ASC"
+            )) || [];
         } else {
           activities = (
             await import("@/components/dummyData/sample-activities")

@@ -28,13 +28,13 @@ export async function callModel(prompt: string, history: Array<{ role: string; c
     const response = result;
 
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const functionCalls = response.candidates?.[0]?.content?.parts?.filter(part => part.functionCall)?.map(part => part.functionCall);
+    const functionCalls = response.candidates?.[0]?.content?.parts?.filter(part => part.functionCall)?.map(part => part.functionCall).filter(call => call && call.name) as { name: string; args: Record<string, unknown> }[] | undefined;
 
     return {
         content: text,
         toolCalls: functionCalls?.map(call => ({
             name: call.name,
-            arguments: call.args as Record<string, unknown>,
+            arguments: call.args,
         })),
     };
 }

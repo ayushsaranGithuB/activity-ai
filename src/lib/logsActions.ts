@@ -17,13 +17,13 @@ export async function fetchActivities(): Promise<ActivityLogItem[]> {
             const rows = await dbQuery(
                 "SELECT id, description, category_id, timestamp FROM activities ORDER BY timestamp DESC"
             );
-            return rows.map((a: ActivityLogItem) => ({
+            return rows?.map((a: ActivityLogItem) => ({
                 id: a.id,
                 description: a.description,
                 category_id: a.category_id,
                 timestamp: a.timestamp,
                 category: undefined,
-            }));
+            })) || [];
         } catch (err) {
             console.error("Failed to fetch activities from SQLite:", err);
             return [];

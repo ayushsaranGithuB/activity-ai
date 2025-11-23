@@ -14,11 +14,11 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { setupNotifications } from "@/utils/notifications";
-import { Link, useNavigate, Outlet } from "@tanstack/react-router";
+import { setupNotifications } from "./utils/notifications";
 import { getLastActivityTimestamp } from "@/lib/logsActions";
+import { Link, useNavigate, Outlet } from "@tanstack/react-router";
 
-export default function Layout() {
+export default function App() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const navigate = useNavigate();
 

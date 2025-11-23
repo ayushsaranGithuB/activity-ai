@@ -1,8 +1,9 @@
 import { createRoot } from "react-dom/client";
-import App from "./App";
 import { initializeAI } from "./lib/ai";
 import "./css/styles.css";
 import { Capacitor } from "@capacitor/core";
+import { RouterProvider } from "@tanstack/react-router";
+import { router } from "./router";
 
 // Initialize Gemini AI with API key from environment variables
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -39,4 +40,6 @@ if (Capacitor.isNativePlatform()) {
     });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <RouterProvider router={router} />
+);

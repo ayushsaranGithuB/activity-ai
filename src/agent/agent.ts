@@ -80,7 +80,7 @@ Message: "${trimmed}"
         try {
             const rows = await dbQuery('SELECT name FROM categories');
             if (Array.isArray(rows)) {
-                existingCategories = rows.map((r: { name?: string }) => r.name).filter(Boolean);
+                existingCategories = rows.map((r: { name?: string }) => r.name).filter((name): name is string => name !== undefined);
             }
         } catch {
             existingCategories = [];
