@@ -82,3 +82,25 @@ export async function setupNotifications(navigate: NavigateFn, getLastActivityTi
         if (navigate) navigate({ to: '/' });
     });
 }
+
+// Utility to send a one-off notification
+export async function sendNotification(
+    title: string = "Activity AI",
+    body: string
+) {
+    console.log("Sending notification:", title, body);
+    const permission = await LocalNotifications.requestPermissions();
+    if (permission.display !== "granted") {
+        console.log("Notifications permission not granted");
+        return;
+    }
+    await LocalNotifications.schedule({
+        notifications: [{
+            id: Math.floor(Math.random() * 999999) + 1, // Random ID within int range
+            title: title,
+            body: body,
+            schedule: { at: new Date(Date.now() + 1000) } // 1 second later
+        }]
+    });
+    console.log("Notification scheduled successfully");
+}

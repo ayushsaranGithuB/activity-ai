@@ -1,23 +1,25 @@
 # Activity AI — TypeScript + React + Vite + Capacitor
 
-A minimal, local-first activity logging app that uses **AI to categorize user activities**.  
-Built with **React + TypeScript + Vite**, packaged for mobile with **Capacitor**, and powered by an **Express AI API backend**.
+A local-first activity logging app that uses **AI to categorize and analyze user activities**.  
+Built with **React + TypeScript + Vite**, packaged for mobile with **Capacitor**, and powered by **Google Gemini AI**.
 
 ---
 
 ## 🚀 Features
 
-- **Freeform activity input** — users type "what they're up to"
-- **AI-powered categorization** using OpenAI (gpt-3.5 / gpt-4o-mini / any model you choose)
-- **React + TypeScript** frontend
+- **Conversational AI interface** — Chat with the AI to log activities naturally
+- **AI-powered categorization** using Google Gemini (gemini-2.5-flash-lite)
+- **Activity logging and management** with persistent local storage
+- **Trend analysis** — View weekly, monthly, and yearly activity trends
+- **React + TypeScript** frontend with TanStack Router
 - **Capacitor Android app support**
-- **Modular components** (`ActivityInput`, `Trends`)
-- **Simple CSS with easy extension points**
-- Clean and structured file layout
+- **Modular components** and screens (Chat, Logs, Settings, Trends)
+- **Local SQLite storage** for offline functionality
+- **Notification system** for activity reminders
 - Ready for:
-  - Offline storage (IndexedDB or SQLite)
-  - Trend analytics
-  - Integration with charts, embeddings, vector search, etc.
+  - Advanced analytics and insights
+  - Data export/import
+  - PWA support
 
 ---
 
@@ -28,26 +30,72 @@ Built with **React + TypeScript + Vite**, packaged for mobile with **Capacitor**
 - React 18
 - TypeScript
 - Vite
+- TanStack Router
 - Capacitor (Android target)
-
-### Backend (local server)
-
-- Express
-- OpenAI API via fetch
+- Tailwind CSS + shadcn/ui components
 
 ### AI
 
-- Uses the OpenAI Completion API (can easily switch to Chat Completions)
+- Google Gemini AI (gemini-2.5-flash-lite)
+
+### Storage
+
+- SQLite (via Capacitor SQLite plugin)
+- Local file system for backups
 
 ---
 
 ## 📁 Folder Structure
 
-activity-ai-ts/ │ ├── index.html ├── package.json ├── tsconfig.json ├── vite.config.ts ├── capacitor.config.json │ ├── src/ │ ├── main.tsx │ ├── App.tsx │ ├── styles.css │ └── components/ │ ├── ActivityInput.tsx │ └── Trends.tsx │ └── server/ └── index.js
+```
+activity-ai/
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── capacitor.config.json
+├── tailwind.config.js
+├── src/
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── router.tsx
+│   ├── agent/
+│   │   ├── agent.ts
+│   │   ├── model.ts
+│   │   ├── prompt.ts
+│   │   └── tools.ts
+│   ├── components/
+│   │   ├── ui/ (shadcn components)
+│   │   ├── logs/
+│   │   └── dummyData/
+│   ├── css/
+│   ├── db/
+│   │   └── migrations/
+│   ├── lib/
+│   │   ├── ai.ts
+│   │   ├── db.ts
+│   │   └── utils.ts
+│   ├── prompts/
+│   ├── screens/
+│   │   ├── Chat.tsx
+│   │   ├── Logs.tsx
+│   │   ├── Settings.tsx
+│   │   └── Trends.tsx
+│   ├── types/
+│   └── utils/
+├── android/
+├── public/
+└── scripts/
+```
 
 ---
 
 ## 🧪 Running the Project
+
+### Prerequisites
+
+- Node.js 18+
+- Google Gemini API key (get from [Google AI Studio](https://makersuite.google.com/app/apikey))
 
 ### 1. Install dependencies
 
@@ -55,86 +103,70 @@ activity-ai-ts/ │ ├── index.html ├── package.json ├── tsconf
 npm install
 ```
 
-2. Start the AI backend (Express)
+### 2. Set up environment
 
-Set your API key:
+Create a `.env` file in the root directory:
 
-export OPENAI_API_KEY="your-key-here"
+```
+VITE_GEMINI_API_KEY=your-gemini-api-key-here
+```
 
-Start server:
+### 3. Start the development server
 
-npm run server
+```bash
+npm run dev
+```
 
-The server runs at:
+Visit: http://localhost:5173
 
-http://localhost:3000
+### 📱 Building the Android App
 
-3. Start the frontend npm run dev
+1. Build for production:
 
-Visit:
-
-http://localhost:5173
-
-📱 Building the Android App
-
-After running a production build:
-
+```bash
 npm run build
+```
 
-Sync Capacitor:
+2. Sync with Capacitor:
 
+```bash
 npm run cap:sync
+```
 
-Open Android Studio:
+3. Open in Android Studio:
 
+```bash
 npm run cap:open-android
+```
 
-From there, you can:
+From Android Studio, you can:
+- Build a debug APK
+- Build a release APK
+- Run directly on a device
 
-Build a debug APK
+---
 
-Build a release APK
+## 🤖 AI Integration
 
-Run directly on a device
+The app uses Google Gemini AI for:
+- Activity categorization
+- Conversational responses
+- Trend summaries
+- Intelligent activity detection from natural language
 
-🤖 AI Endpoint
+AI calls are made directly from the frontend using the `@google/genai` library.
 
-The frontend sends:
+---
 
-POST /api/categorize
+## 🔮 Key Components
 
-Body:
+- **Chat Screen**: Conversational interface with the AI agent
+- **Logs Screen**: View and manage logged activities
+- **Trends Screen**: Analyze activity patterns over time
+- **Settings Screen**: Configure notifications, data management, and app preferences
 
-{ "text": "Going for a run" }
+---
 
-Response:
-
-{ "category": "Exercise" }
-
-You can upgrade this endpoint later to:
-
-Use embeddings
-
-Store categories persistently
-
-Generate insights
-
-Auto-discover new categories
-
-🔮 Future Improvements (Optional)
-
-Persistent storage (IndexedDB/SQLite)
-
-Weekly/monthly/yearly trends
-
-Sparkline mini-charts
-
-On-device AI models (Gemini Nano, Llama Edge)
-
-PWA support
-
-Export/import user data
-
-📄 License
+## 📄 License
 
 MIT — free to use and extend.

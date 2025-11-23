@@ -1,0 +1,11 @@
+smallIcon
+Set the default status bar icon for notifications. Icons should be placed in your app's res/drawable folder. The value for this option should be the drawable resource ID, which is the filename without an extension. Only available for Android.	
+{
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#488AFF",
+      "sound": "beep.wav"
+    }
+  }
+}
