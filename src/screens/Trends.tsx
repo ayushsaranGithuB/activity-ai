@@ -13,6 +13,16 @@ interface TrendData {
   subcategories: { name: string; totalMinutes: number; percentage: number }[];
 }
 
+// Format minutes into "Hh Mm" when >= 60, otherwise show "Xm".
+function formatMinutes(minutes: number): string {
+  if (!minutes && minutes !== 0) return "0m";
+  const mins = Math.max(0, Math.round(minutes));
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem === 0 ? `${hrs}h` : `${hrs}h ${rem}m`;
+}
+
 const TrendCard = ({
   title,
   trends,
@@ -44,9 +54,9 @@ const TrendCard = ({
                   className={`h-[2px] rounded-md bg-white/30`}
                   style={{ width: `${trend.percentage}%` }}
                 />
-                <div className="flex items-center space-x-2 min-w-[120px]">
-                  <span className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-md">
-                    {trend.totalMinutes} min
+                <div className="flex items-center space-x-2  justify-between ">
+                  <span className="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded-md text-right whitespace-nowrap">
+                    {formatMinutes(trend.totalMinutes)}
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {trend.percentage}%
@@ -59,13 +69,13 @@ const TrendCard = ({
                   className="flex items-center justify-between ml-4 opacity-60 mb-0"
                 >
                   <div className="flex items-center space-x-3 w-full">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground text-right">
                       {sub.name}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-2 min-w-[120px]">
-                    <span className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded-md">
-                      {sub.totalMinutes} min
+                  <div className="flex items-center space-x-2 w-full justify-end">
+                    <span className="px-3 py-1 text-xs bg-muted text-muted-foreground rounded-md">
+                      {formatMinutes(sub.totalMinutes)}
                     </span>
                   </div>
                 </div>

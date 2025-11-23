@@ -199,6 +199,30 @@ export const CATEGORY_MAPPINGS: CategoryMapping[] = [
         ],
     },
     {
+        name: "Sleep",
+        description: "Sleep, bedtime, naps, and related rest activities",
+        examples: [
+            "Sleeping",
+            "Nap",
+            "Bedtime",
+            "Overnight Sleep",
+            "Resting in Bed",
+        ],
+        keywords: [
+            "sleep",
+            "sleeping",
+            "slept",
+            "nap",
+            "napping",
+            "bed",
+            "bedtime",
+            "asleep",
+            "insomnia",
+            "rest",
+            "resting",
+        ],
+    },
+    {
         name: "Social",
         description: "Social interactions and relationship activities",
         examples: [
