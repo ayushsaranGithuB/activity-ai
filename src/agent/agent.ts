@@ -11,7 +11,7 @@ import {
 } from './tools';
 import { initDB } from '../db/initialize';
 import { CATEGORIZE_PROMPT, BATCH_CATEGORIZE_PROMPT } from '../prompts/categorizePrompt';
-import { systemPrompt } from './prompt';
+import { systemPrompt } from '../prompts/systemPrompt';
 import { Capacitor } from '@capacitor/core';
 
 
@@ -76,10 +76,12 @@ async function detectActivity(
 
     // STEP 1 — Ask Gemini directly: "Is this an activity?"
     const activityCheckPrompt = `
-In one word ("yes" or "no"):
-Is the user describing something they are doing or just did?
-Message: "${trimmed}"
-`;
+    In one word ("yes" or "no"):
+    Is the user describing something they are doing or just did?
+    Messages:
+    Agent: what are you up to?
+    User: "${trimmed}"
+    `;
     try {
         const act = await callModel(activityCheckPrompt, [{ role: 'user', content: trimmed }], toolDefinitions);
         const answer = act?.content?.trim().toLowerCase();
@@ -136,9 +138,13 @@ async function askFollowupQuestion(
     activity: string,
     _category?: string
 ): Promise<string | null> {
-    const prompt = `You're an assistant. The user said: "${activity}". 
-Decide if you have enough information to log this activity in a category. If yes, return "NO_FOLLOWUP". If not, ask one short, casual follow-up question to get more details. 
-Return only the decision or the question.`;
+    const prompt = `You're an assistant.
+    The agent asked: What are you up to?
+    The user said: "${activity}". 
+    Decide if you have enough information to log this activity in a category. 
+    If yes, return "NO_FOLLOWUP". 
+    If not, ask one short, casual follow-up question to get more details. 
+    Return only the decision or the question.`;
     try {
         const resp = await callModel(prompt, [{ role: 'user', content: activity }], toolDefinitions);
         const result = resp?.content?.trim();
