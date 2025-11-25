@@ -37,10 +37,10 @@ export default function Layout() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased flex flex-col w-full px-3">
+    <div className="min-h-screen bg-background text-foreground antialiased flex flex-col w-full px-3 max-h-screen">
       <Toaster position="bottom-right" />
 
-      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60  pt-[30px]">
+      <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60  app-header">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center space-x-2">
             <Link
@@ -114,7 +114,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden flex flex-col">
+      <main className="flex-1 overflow-y-scroll flex flex-col h-full">
         <Outlet />
       </main>
     </div>

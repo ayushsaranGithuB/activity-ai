@@ -270,33 +270,37 @@ const Chat: React.FC = () => {
   // }, []);
 
   return (
-    <div className="flex flex-col h-full bg-background flex-1">
-      {/* Messages */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-        <div className="space-y-5 pb-4">
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src="" alt="Activity AI" />
-                <AvatarFallback>
-                  <Bot className="h-8 w-8" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-2 max-w-md">
-                <h2 className="text-xl font-semibold">What are you up to?</h2>
-                {/* <p className="text-lg">{aiQuestion}</p> */}
+    <>
+      <div className="flex flex-col h-full bg-background flex-1 ">
+        {/* Messages */}
+        <ScrollArea
+          ref={scrollAreaRef}
+          className="flex-1 p-4 min-h-content overflow-y-scroll"
+        >
+          <div className="space-y-5 pb-4">
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src="" alt="Activity AI" />
+                  <AvatarFallback>
+                    <Bot className="h-8 w-8" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="space-y-2 max-w-md">
+                  <h2 className="text-xl font-semibold">What are you up to?</h2>
+                  {/* <p className="text-lg">{aiQuestion}</p> */}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex items-start space-x-3 ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              {/* {message.role === "agent" && (
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex items-start space-x-3 ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                {/* {message.role === "agent" && (
                 <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
                   <AvatarImage src="" alt="Activity AI" />
                   <AvatarFallback>
@@ -305,24 +309,24 @@ const Chat: React.FC = () => {
                 </Avatar>
               )} */}
 
-              <div
-                className={`rounded-lg px-4 py-2 max-w-[80%] break-words ${
-                  message.role === "user"
-                    ? "bg-neutral-800 text-primary-foreground rounded-xl px-4 py-2 rounded-br-none"
-                    : "bg-muted"
-                }`}
-              >
-                <p
-                  className={clsx(
-                    "whitespace-pre-wrap",
-                    message.role === "user" ? "text-sm" : "text-lg"
-                  )}
+                <div
+                  className={`rounded-lg px-4 py-2 max-w-[80%] break-words ${
+                    message.role === "user"
+                      ? "bg-neutral-800 text-primary-foreground rounded-xl px-4 py-2 rounded-br-none"
+                      : "bg-muted"
+                  }`}
                 >
-                  {message.content}
-                </p>
-              </div>
+                  <p
+                    className={clsx(
+                      "whitespace-pre-wrap",
+                      message.role === "user" ? "text-sm" : "text-lg"
+                    )}
+                  >
+                    {message.content}
+                  </p>
+                </div>
 
-              {/* {message.role === "user" && (
+                {/* {message.role === "user" && (
                 <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
                   <AvatarImage src="" alt="You" />
                   <AvatarFallback>
@@ -330,39 +334,40 @@ const Chat: React.FC = () => {
                   </AvatarFallback>
                 </Avatar>
               )} */}
-            </div>
-          ))}
+              </div>
+            ))}
 
-          {isLoading && (
-            <div className="flex items-start space-x-3">
-              <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
-                <AvatarImage src="" alt="Activity AI" />
-                <AvatarFallback>
-                  <Bot className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="bg-muted rounded-lg px-4 py-2">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 bg-current rounded-full animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-current rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
+            {isLoading && (
+              <div className="flex items-start space-x-3">
+                <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                  <AvatarImage src="" alt="Activity AI" />
+                  <AvatarFallback>
+                    <Bot className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="bg-muted rounded-lg px-4 py-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
+                    <div
+                      className="w-2 h-2 bg-current rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-current rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-
+            )}
+          </div>
+        </ScrollArea>
+      </div>
       {/* Input */}
       <div
         ref={inputRef}
-        className=" bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 "
+        className=" sticky bottom-0 p-4 bg-black"
+        id="input-bar"
       >
         <div className="max-w-4xl mx-auto">
           <div className="relative flex items-end gap-3">
@@ -426,7 +431,7 @@ const Chat: React.FC = () => {
           <SheetFooter />
         </SheetContent>
       </Sheet>
-    </div>
+    </>
   );
 };
 

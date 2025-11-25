@@ -68,6 +68,14 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+header.app-header {
+    padding-top: 30px;
+}
+
+#input-bar {
+    background: linear-gradient(transparent 0%, black 20px);
+}
+
 .text-muted-foreground {
     color: var(--color-muted);
 }
