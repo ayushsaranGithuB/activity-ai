@@ -5,6 +5,7 @@ import {
   AgentResponse,
   resetConversationContext,
   getSessionId,
+  startSession,
 } from "../agent/agent";
 import { startSessionAndNotify } from "@/utils/sessionNotifier";
 import {
@@ -45,7 +46,18 @@ const Chat: React.FC = () => {
     loadMessages();
     // adopt existing session if App already started one
     try {
-      const sid = getSessionId();
+      const makeSessionId = () =>
+        `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+      let sid = getSessionId();
+      if (!sid) {
+        sid = makeSessionId();
+        try {
+          startSession(sid as string);
+        } catch (e) {
+          console.error("Error starting session in agent:", e);
+        }
+      }
       setSessionId(sid);
     } catch {
       console.error("Error reading session id");
@@ -167,6 +179,9 @@ const Chat: React.FC = () => {
           setPostLogModalOpen(true);
           postLogTimeoutRef.current = null;
         }, 3000);
+        // Reset the session ID and conversation context
+        setSessionId(null);
+        resetConversationContext();
       }
       // refresh inactivity timer on each successful send
       resetInactivityTimer();

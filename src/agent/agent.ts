@@ -10,6 +10,7 @@ import {
     backupRestore
 } from './tools';
 import { initDB } from '../db/initialize';
+import { getAllCategoryNames } from '../lib/category-guidance';
 import { CATEGORIZE_PROMPT, BATCH_CATEGORIZE_PROMPT } from '../prompts/categorizePrompt';
 import { systemPrompt } from '../prompts/systemPrompt';
 import { Capacitor } from '@capacitor/core';
@@ -43,14 +44,18 @@ let conversationSessionId: string | null = null;
 
 function generateSessionId() {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
 }
 
 /** Start a new conversation session and clear any follow-up context. */
-export function startNewSession(): string {
-    conversationSessionId = generateSessionId();
+export function startSession(sessionId?: string): string {
+    conversationSessionId = sessionId ?? generateSessionId();
     conversationContext = null;
     return conversationSessionId;
+}
+
+/** Backwards-compatible alias that generates a new id */
+export function startNewSession(): string {
+    return startSession();
 }
 
 export function getSessionId(): string | null {
@@ -368,8 +373,10 @@ export async function processMessage(userMessage: string): Promise<AgentResponse
             await saveMessage('agent', styledFollowup);
             return { content: styledFollowup };
         }
-        const fallbackResponse = await styleResponse("Got it! Logging this activity.");
-        return { content: fallbackResponse, showPostLogActions: true, activityId: conversationContext.activityId };
+        const fallbackResponse = await styleResponse(`Got it! Logging ${activityMatch.description}.`);
+        // reset context since no follow-up needed
+        resetConversationContext();
+        return { content: fallbackResponse, showPostLogActions: true };
     }
 
     // GENERAL CHAT MODE
@@ -658,6 +665,32 @@ export async function recategorizeActivities(): Promise<{ success: boolean; reca
                 console.error(`Error processing batch starting at index ${i}:`, error);
                 errors += batch.length;
             }
+        }
+
+        // After recategorization, remove any categories that have zero activities
+        // except for the fixed initial categories defined in `CATEGORY_MAPPINGS`.
+        try {
+            const fixedNames = getAllCategoryNames();
+            const emptyCats = await dbQuery(`
+                SELECT id, name FROM categories c
+                WHERE NOT EXISTS (SELECT 1 FROM activities a WHERE a.category_id = c.id)
+            `);
+
+            if (Array.isArray(emptyCats) && emptyCats.length) {
+                for (const row of emptyCats) {
+                    const name = row?.name;
+                    const id = row?.id;
+                    if (!id) continue;
+                    if (fixedNames.includes(name)) continue;
+                    try {
+                        await dbQuery('DELETE FROM categories WHERE id = ?', [id]);
+                    } catch (err) {
+                        console.error('Failed to delete empty category', id, name, err);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Failed to clean up empty categories after recategorize:', err);
         }
 
         return { success: true, recategorized, errors };
