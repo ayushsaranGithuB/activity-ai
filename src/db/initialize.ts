@@ -55,6 +55,18 @@ INSERT OR IGNORE INTO schema_meta (version) VALUES (1);
 `;
     await db.execute(schema);
 
+    // Migration: Ensure `icon` column exists on categories (added in later schema)
+    try {
+        const catCols = await db.query("PRAGMA table_info(categories)");
+        const hasIcon = catCols.values?.some((col: { name: string }) => col.name === 'icon');
+        if (!hasIcon) {
+            await db.run("ALTER TABLE categories ADD COLUMN icon TEXT");
+            console.log("Migration: Added icon column to categories table");
+        }
+    } catch (error) {
+        console.error("Migration (categories.icon) failed:", error);
+    }
+
     // Insert initial categories from CATEGORY_MAPPINGS (include suggested icons)
     try {
         // dynamic import to avoid circular issues

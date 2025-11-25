@@ -1,6 +1,7 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { db, sqlite } from '../db/initialize';
+import { CategoryItem } from '@/types/categoryItem';
 
 export async function dbInsert(table: string, data: Record<string, unknown>) {
     if (!Capacitor.isNativePlatform()) {
@@ -203,7 +204,16 @@ export const storage = {
                 // Running on web — return bundled sample categories for demo/dev
                 try {
                     const mod = await import('../db/dummyData/sample-categories');
-                    return mod.sampleCategories || mod.default || [];
+                    const raw = mod.sampleCategories || mod.default || [];
+                    console.debug('storage.getAllCategories: returning web sample categories count=', (raw || []).length);
+                    // normalize shape
+                    return (raw || []).map((c: CategoryItem, idx: number) => ({
+                        id: c.id ?? idx + 1,
+                        name: c.name ?? `Category ${idx + 1}`,
+                        description: c.description ?? null,
+                        icon: c.icon ?? null,
+                        created_at: new Date().toISOString(),
+                    }));
                 } catch (e) {
                     console.warn('Failed to load sample categories module:', e);
                     return [];

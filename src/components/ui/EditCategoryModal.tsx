@@ -132,8 +132,9 @@ const EditCategoryModal: React.FC<Props> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-6 gap-2 max-h-56 overflow-auto">
-                {filtered.map((ic) => {
+              <div className="relative">
+                <div className="grid grid-cols-6 gap-2 max-h-56 overflow-y-auto thin-scrollbar pr-2">
+                  {filtered.map((ic) => {
                   const C = ic.Component;
                   return (
                     <button
@@ -148,6 +149,9 @@ const EditCategoryModal: React.FC<Props> = ({
                     </button>
                   );
                 })}
+                </div>
+                {/* Bottom fade to indicate more content when scrollable */}
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-b from-transparent to-neutral-950" />
               </div>
             </div>
 

@@ -232,6 +232,7 @@ const Trends: React.FC = () => {
     async function loadTrends() {
       setLoading(true);
       try {
+        console.debug("Trends: starting loadTrends");
         let activities = [];
         let categories = [];
 
@@ -251,17 +252,45 @@ const Trends: React.FC = () => {
           activities = (await import("@/db/dummyData/sample-activities"))
             .sample_activities;
 
-          categories = [
-            { id: 1, name: "Exercise" },
-            { id: 2, name: "Meals" },
-            { id: 3, name: "Work" },
-            { id: 4, name: "Learning" },
-            { id: 5, name: "Entertainment" },
-            { id: 6, name: "Household" },
-            { id: 7, name: "Social" },
-            { id: 8, name: "Health" },
-          ].map((c) => ({ ...c, icon: suggestIconForName(c.name) }));
+          try {
+            categories = [
+              { id: 1, name: "Exercise" },
+              { id: 2, name: "Meals" },
+              { id: 3, name: "Work" },
+              { id: 4, name: "Learning" },
+              { id: 5, name: "Entertainment" },
+              { id: 6, name: "Household" },
+              { id: 7, name: "Social" },
+              { id: 8, name: "Health" },
+            ].map((c) => ({ ...c, icon: suggestIconForName?.(c.name) }));
+          } catch (e) {
+            console.warn(
+              "Trends: failed to generate web fallback categories with icons",
+              e
+            );
+            categories = [
+              { id: 1, name: "Exercise" },
+              { id: 2, name: "Meals" },
+              { id: 3, name: "Work" },
+              { id: 4, name: "Learning" },
+              { id: 5, name: "Entertainment" },
+              { id: 6, name: "Household" },
+              { id: 7, name: "Social" },
+              { id: 8, name: "Health" },
+            ];
+          }
         }
+
+        console.debug(
+          "Trends: loaded activities",
+          activities?.length,
+          "categories",
+          categories?.length,
+          {
+            activities: activities?.slice?.(0, 5),
+            categories: categories?.slice?.(0, 10),
+          }
+        );
 
         const today = computeTrends(activities, categories, "today");
         const week = computeTrends(activities, categories, "week");

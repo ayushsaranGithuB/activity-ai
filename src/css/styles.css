@@ -323,3 +323,40 @@ button:disabled {
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* Thin styled scrollbar + always-visible track hint
+     - Uses native scrollbar styling where supported (@-webkit, Firefox)
+     - Adds a faint right-side track via ::after so mobile users see a visible cue
+*/
+.thin-scrollbar {
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: rgba(255,255,255,0.18) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.18);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+/* Subtle permanent track hint (works as visual cue on mobile where native scrollbars can hide)
+     Adjust right offset to avoid overlapping native scrollbar on desktop browsers. */
+.thin-scrollbar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 2px;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    border-radius: 9999px;
+    pointer-events: none;
+}

@@ -29,7 +29,17 @@ const Categories: React.FC = () => {
   };
 
   useEffect(() => {
-    load();
+    (async () => {
+      await load();
+      try {
+        console.debug(
+          "Categories screen loaded, items=",
+          (await storage.getAllCategories())?.length
+        );
+      } catch (e) {
+        console.warn("Categories: failed to log categories count", e);
+      }
+    })();
   }, []);
 
   return (
