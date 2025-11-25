@@ -12,7 +12,7 @@
     --color-bg: #000000;
     --color-fg: #FFFFFF;
     --color-border: #333333;
-    --color-muted: #1a1a1a;
+    --color-muted: #929292;
     --color-muted-hover: #2a2a2a;
     --color-disabled: #333333;
     --button-primary: #FFFFFF;
@@ -66,6 +66,10 @@ body {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+.text-muted-foreground {
+    color: var(--color-muted);
 }
 
 #root {

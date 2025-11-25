@@ -1,11 +1,19 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings as SettingsIcon, Database, Bell, Bug } from "lucide-react";
+import {
+  Settings as SettingsIcon,
+  Database,
+  Bell,
+  Bug,
+  ChartBarStacked,
+} from "lucide-react";
 import { sendNotification } from "@/utils/notifications";
 import { Switch } from "@/components/ui/switch";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { storage } from "@/agent/tools";
 import { recategorizeActivities } from "@/agent/agent";
+import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
 
 const exportDatabase = async () => {
   try {
@@ -72,32 +80,26 @@ const Settings: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Bug className="h-5 w-5" />
-              <span>Debug</span>
+              <ChartBarStacked className="h-5 w-5" />
+              <span>Categories</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/*  Notification Settings ------------------------------------------ */}
 
             <div className="p-4 rounded-lg  bg-neutral-900">
-              <h4 className="font-medium mb-2">Notificaions</h4>
+              <div className=" flex justify-between items-center">
+                <h4 className="font-medium mb-2">Edit Categories</h4>
+                <Link
+                  to="/settings/categories"
+                  className="text-sm text-primary border px-2 py-1 rounded-md"
+                >
+                  Edit
+                </Link>
+              </div>
               <p className="text-sm text-muted-foreground mb-3">
-                enable or disable app notifications.
+                Manage your activity categories.
               </p>
-              {/* Slider to enable/disable notifications */}
-              <Switch
-                onCheckedChange={
-                  // toggle notifications permissions
-                  async (checked) => {
-                    const permission =
-                      await LocalNotifications.requestPermissions();
-                    if (checked && permission.display !== "granted") {
-                      alert("Notifications permission not granted");
-                      return;
-                    }
-                  }
-                }
-              />
             </div>
 
             {/* Test Notification ------------------------------------------ */}
@@ -125,12 +127,13 @@ const Settings: React.FC = () => {
                 Use AI to recategorize all your existing activities with better,
                 more specific categories.
               </p>
-              <button
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
+              <Button
+                variant={"outline"}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors cursor-pointer"
                 onClick={handleRecategorize}
               >
                 Recategorize All Activities
-              </button>
+              </Button>
             </div>
 
             <div className="p-4 rounded-lg  bg-neutral-900">
@@ -138,9 +141,94 @@ const Settings: React.FC = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Remove all logged activities and start fresh.
               </p>
-              <button className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90 transition-colors">
+              <Button
+                variant={"outline"}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90 transition-colors"
+              >
                 Clear All Data
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Bug className="h-5 w-5" />
+              <span>Debug</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/*  Notification Settings ------------------------------------------ */}
+
+            <div className="p-4 rounded-lg  bg-neutral-900">
+              <div className=" flex justify-between items-center">
+                <h4 className="font-medium mb-2">Notificaions</h4>
+                {/* Slider to enable/disable notifications */}
+                <Switch
+                  onCheckedChange={
+                    // toggle notifications permissions
+                    async (checked) => {
+                      const permission =
+                        await LocalNotifications.requestPermissions();
+                      if (checked && permission.display !== "granted") {
+                        alert("Notifications permission not granted");
+                        return;
+                      }
+                    }
+                  }
+                />
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                enable or disable app notifications.
+              </p>
+            </div>
+
+            {/* Test Notification ------------------------------------------ */}
+            <div className="p-4 rounded-lg  bg-neutral-900">
+              <h4 className="font-medium mb-2">Test Notification</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Send a test notification to ensure notifications are working.
+              </p>
+              <button
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors border cursor-pointer"
+                onClick={() => {
+                  sendNotification(
+                    "Test Notification",
+                    "This is a test notification from Activity AI!"
+                  );
+                }}
+              >
+                Send Test Notification
               </button>
+            </div>
+
+            <div className="p-4 rounded-lg  bg-neutral-900">
+              <h4 className="font-medium mb-2">Recategorize Activities</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Use AI to recategorize all your existing activities with better,
+                more specific categories.
+              </p>
+              <Button
+                variant={"outline"}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors cursor-pointer"
+                onClick={handleRecategorize}
+              >
+                Recategorize All Activities
+              </Button>
+            </div>
+
+            <div className="p-4 rounded-lg  bg-neutral-900">
+              <h4 className="font-medium mb-2">Clear Data</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Remove all logged activities and start fresh.
+              </p>
+              <Button
+                variant={"outline"}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90 transition-colors"
+              >
+                Clear All Data
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -158,12 +246,13 @@ const Settings: React.FC = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Download all your activity data as a JSON file.
               </p>
-              <button
+              <Button
+                variant={"outline"}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
                 onClick={exportDatabase}
               >
                 Export Activities
-              </button>
+              </Button>
             </div>
 
             <div className="p-4 rounded-lg  bg-neutral-900">
@@ -171,9 +260,12 @@ const Settings: React.FC = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Remove all logged activities and start fresh.
               </p>
-              <button className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90 transition-colors">
+              <Button
+                variant={"outline"}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90 transition-colors"
+              >
                 Clear All Data
-              </button>
+              </Button>
             </div>
           </CardContent>
         </Card>
