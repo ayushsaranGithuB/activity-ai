@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
+    icon TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -54,12 +55,26 @@ INSERT OR IGNORE INTO schema_meta (version) VALUES (1);
 `;
     await db.execute(schema);
 
-    // Insert initial categories from CATEGORY_MAPPINGS
-    for (const mapping of CATEGORY_MAPPINGS) {
-        await db.run(
-            'INSERT OR IGNORE INTO categories (name, description) VALUES (?, ?)',
-            [mapping.name, mapping.description]
-        );
+    // Insert initial categories from CATEGORY_MAPPINGS (include suggested icons)
+    try {
+        // dynamic import to avoid circular issues
+        const { suggestIconForName } = await import('../lib/iconSuggestions');
+        for (const mapping of CATEGORY_MAPPINGS) {
+            const suggested = suggestIconForName(mapping.name);
+            await db.run(
+                'INSERT OR IGNORE INTO categories (name, description, icon) VALUES (?, ?, ?)',
+                [mapping.name, mapping.description, suggested]
+            );
+        }
+    } catch (e) {
+        // fallback if suggestion import fails
+        for (const mapping of CATEGORY_MAPPINGS) {
+            await db.run(
+                'INSERT OR IGNORE INTO categories (name, description) VALUES (?, ?)',
+                [mapping.name, mapping.description]
+            );
+            console.warn('Failed to suggest icons for initial categories:', e);
+        }
     }
 
     // Migration: Add length_mins column if it doesn't exist

@@ -24,7 +24,7 @@ import { Send, Bot, SquareChartGantt, CirclePlus } from "lucide-react";
 import { Keyboard } from "@capacitor/keyboard";
 import { Capacitor } from "@capacitor/core";
 import { Message } from "@/types";
-import { sampleMessages } from "@/components/dummyData/sample-messages";
+import { sampleMessages } from "@/db/dummyData/sample-messages";
 import clsx from "clsx";
 
 const Chat: React.FC = () => {

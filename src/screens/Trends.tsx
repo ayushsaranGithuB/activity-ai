@@ -58,7 +58,7 @@ const TrendCard = ({
               {trend.subcategories.map((sub) => (
                 <div
                   key={sub.name}
-                  className="flex items-center justify-between ml-4 opacity-60 mb-0"
+                  className="flex items-center justify-between ml-4  mb-0"
                 >
                   <div className="flex items-center space-x-3 w-full">
                     <span className="text-xs text-muted-foreground text-right">
@@ -228,9 +228,8 @@ const Trends: React.FC = () => {
               "SELECT id, name FROM categories ORDER BY id ASC"
             )) || [];
         } else {
-          activities = (
-            await import("@/components/dummyData/sample-activities")
-          ).sample_activities;
+          activities = (await import("@/db/dummyData/sample-activities"))
+            .sample_activities;
 
           categories = [
             { id: 1, name: "Exercise" },

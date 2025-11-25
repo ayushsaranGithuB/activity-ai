@@ -7,6 +7,7 @@ import Chat from "@/screens/Chat";
 import Timeline from "@/screens/Timeline";
 import Trends from "@/screens/Trends";
 import Settings from "@/screens/Settings";
+import Categories from "@/screens/Categories";
 import Layout from "@/App";
 
 const rootRoute = createRootRoute({
@@ -37,11 +38,18 @@ const settingsRoute = createRoute({
   component: Settings,
 });
 
+const categoriesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings/categories",
+  component: Categories,
+});
+
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
     chatRoute,
     logsRoute,
     trendsRoute,
     settingsRoute,
+    categoriesRoute,
   ]),
 });

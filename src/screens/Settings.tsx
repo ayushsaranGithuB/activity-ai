@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Settings as SettingsIcon,
@@ -8,12 +8,14 @@ import {
   ChartBarStacked,
 } from "lucide-react";
 import { sendNotification } from "@/utils/notifications";
+import { toast } from "react-hot-toast";
 import { Switch } from "@/components/ui/switch";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { storage } from "@/agent/tools";
 import { recategorizeActivities } from "@/agent/agent";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
+import ConfirmRecategorizeModal from "@/components/ui/ConfirmRecategorizeModal";
 
 const exportDatabase = async () => {
   try {
@@ -38,35 +40,34 @@ const exportDatabase = async () => {
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Failed to export database:", error);
-    alert("Failed to export database. Please try again.");
+    toast.error("Failed to export database. Please try again.");
   }
 };
 
-const handleRecategorize = async () => {
-  if (
-    !confirm(
-      "This will recategorize all your activities using AI. This may take a few minutes. Continue?"
-    )
-  ) {
-    return;
-  }
-
+const doRecategorize = async () => {
   try {
+    const id = toast.loading(
+      "Recategorizing activities — this may take a few minutes..."
+    );
     const result = await recategorizeActivities();
+    toast.dismiss(id);
     if (result.success) {
-      alert(
+      toast.success(
         `Recategorization complete! ${result.recategorized} activities updated. ${result.errors} errors.`
       );
     } else {
-      alert("Recategorization failed. Please try again.");
+      toast.error("Recategorization failed. Please try again.");
     }
   } catch (error) {
     console.error("Recategorization error:", error);
-    alert("Recategorization failed. Please check the console for details.");
+    toast.error(
+      "Recategorization failed. Please check the console for details."
+    );
   }
 };
 
 const Settings: React.FC = () => {
+  const [recategorizeModalOpen, setRecategorizeModalOpen] = useState(false);
   return (
     <div className="container py-6 space-y-6">
       <div>
@@ -111,10 +112,15 @@ const Settings: React.FC = () => {
               <Button
                 variant={"outline"}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors cursor-pointer"
-                onClick={handleRecategorize}
+                onClick={() => setRecategorizeModalOpen(true)}
               >
                 Recategorize All Activities
               </Button>
+              <ConfirmRecategorizeModal
+                open={recategorizeModalOpen}
+                onClose={() => setRecategorizeModalOpen(false)}
+                onConfirm={doRecategorize}
+              />
             </div>
           </CardContent>
         </Card>
@@ -140,7 +146,7 @@ const Settings: React.FC = () => {
                       const permission =
                         await LocalNotifications.requestPermissions();
                       if (checked && permission.display !== "granted") {
-                        alert("Notifications permission not granted");
+                        toast.error("Notifications permission not granted");
                         return;
                       }
                     }

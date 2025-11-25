@@ -199,12 +199,70 @@ export const storage = {
 
     async getAllCategories() {
         try {
+            if (!Capacitor.isNativePlatform()) {
+                // Running on web — return bundled sample categories for demo/dev
+                try {
+                    const mod = await import('../db/dummyData/sample-categories');
+                    return mod.sampleCategories || mod.default || [];
+                } catch (e) {
+                    console.warn('Failed to load sample categories module:', e);
+                    return [];
+                }
+            }
+
             return await dbQuery(
-                "SELECT id, name, description, created_at FROM categories ORDER BY id ASC"
+                "SELECT id, name, description, icon, created_at FROM categories ORDER BY id ASC"
             );
         } catch (error) {
             console.error("Failed to fetch categories:", error);
             return [];
+        }
+    },
+
+    async createCategory({ name, description, icon }: { name: string; description?: string; icon?: string }) {
+        try {
+            const res = await dbInsert('categories', { name, description: description || null, icon: icon || null });
+            return { success: true, id: res.id };
+        } catch (error) {
+            console.error('Failed to create category:', error);
+            return { success: false, error };
+        }
+    },
+
+    async updateCategory(id: number, { name, description, icon }: { name?: string; description?: string; icon?: string }) {
+        try {
+            const data: Record<string, unknown> = {};
+            if (name !== undefined) data.name = name;
+            if (description !== undefined) data.description = description;
+            if (icon !== undefined) data.icon = icon;
+            await dbUpdate('categories', data, { id });
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to update category:', error);
+            return { success: false, error };
+        }
+    },
+
+    async deleteCategoryAndReassign(id: number, reassignToId: number) {
+        try {
+            // Reassign activities
+            await db.run('UPDATE activities SET category_id = ? WHERE category_id = ?', [reassignToId, id]);
+            // Delete category
+            await db.run('DELETE FROM categories WHERE id = ?', [id]);
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to delete and reassign category:', error);
+            return { success: false, error };
+        }
+    },
+    async countActivitiesByCategory(categoryId: number) {
+        try {
+            const res = await dbQuery('SELECT COUNT(id) as count FROM activities WHERE category_id = ?', [categoryId]);
+            const count = res?.[0]?.count ?? 0;
+            return { success: true, count };
+        } catch (error) {
+            console.error('Failed to count activities for category:', error);
+            return { success: false, error };
         }
     },
 };

@@ -8,7 +8,7 @@ export async function getLastActivityTimestamp(): Promise<Date | null> {
 }
 import { Capacitor } from "@capacitor/core";
 import { dbQuery } from "@/agent/tools";
-import { sample_activities } from "@/components/dummyData/sample-activities";
+import { sample_activities } from "@/db/dummyData/sample-activities";
 import { ActivityLogItem } from "@/types";
 
 export async function fetchActivities(): Promise<ActivityLogItem[]> {
