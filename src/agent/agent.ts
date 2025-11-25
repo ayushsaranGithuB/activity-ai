@@ -38,6 +38,26 @@ let conversationContext:
     }
     | null = null;
 
+// A lightweight session id to separate conversations.
+let conversationSessionId: string | null = null;
+
+function generateSessionId() {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+}
+
+/** Start a new conversation session and clear any follow-up context. */
+export function startNewSession(): string {
+    conversationSessionId = generateSessionId();
+    conversationContext = null;
+    return conversationSessionId;
+}
+
+export function getSessionId(): string | null {
+    return conversationSessionId;
+}
+
+
 export async function initializeAgent() {
     if (!isInitialized) {
         await initDB();
@@ -312,6 +332,11 @@ async function logActivity(description: string, categoryName?: string, lengthMin
  * -------------------------------------------------------- */
 export async function processMessage(userMessage: string): Promise<AgentResponse> {
     await initializeAgent();
+
+    // Ensure we have a session id for this incoming message
+    if (!conversationSessionId) {
+        conversationSessionId = generateSessionId();
+    }
 
     if (conversationContext) {
         const result = await handleFollowupConversation(userMessage);
@@ -647,4 +672,5 @@ export async function recategorizeActivities(): Promise<{ success: boolean; reca
  */
 export function resetConversationContext() {
     conversationContext = null;
+    conversationSessionId = null;
 }

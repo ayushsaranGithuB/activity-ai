@@ -4,6 +4,7 @@ import {
   initializeAgent,
   AgentResponse,
   resetConversationContext,
+  getSessionId,
 } from "../agent/agent";
 import {
   Sheet,
@@ -30,15 +31,24 @@ const Chat: React.FC = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [postLogModalOpen, setPostLogModalOpen] = useState(false);
+  const [, setSessionId] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const postLogTimeoutRef = useRef<number | null>(null);
+  const inactivityTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     initializeAgent();
     loadMessages();
+    // adopt existing session if App already started one
+    try {
+      const sid = getSessionId();
+      setSessionId(sid);
+    } catch {
+      console.error("Error reading session id");
+    }
   }, []);
 
   // Listen for global chat-reset events (fired from header/home links)
@@ -53,16 +63,49 @@ const Chat: React.FC = () => {
         clearTimeout(postLogTimeoutRef.current);
         postLogTimeoutRef.current = null;
       }
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+        inactivityTimeoutRef.current = null;
+      }
       setPostLogModalOpen(false);
       setMessages([]);
       setInput("");
+      setSessionId(null);
       setTimeout(() => textareaRef.current?.focus(), 50);
     };
 
+    const startHandler = (ev: Event) => {
+      const custom = ev as CustomEvent;
+      const sid = custom?.detail?.sessionId ?? null;
+      setSessionId(sid);
+    };
+
     window.addEventListener("chat-reset", handler as EventListener);
-    return () =>
+    window.addEventListener("chat-start", startHandler as EventListener);
+    return () => {
       window.removeEventListener("chat-reset", handler as EventListener);
+      window.removeEventListener("chat-start", startHandler as EventListener);
+    };
   }, []);
+
+  // Inactivity timer: clear session and UI after 5 minutes of no user input
+  const resetInactivityTimer = () => {
+    if (inactivityTimeoutRef.current) {
+      clearTimeout(inactivityTimeoutRef.current);
+      inactivityTimeoutRef.current = null;
+    }
+    inactivityTimeoutRef.current = window.setTimeout(() => {
+      try {
+        resetConversationContext();
+      } catch {
+        console.error("Error resetting conversation context");
+      }
+      window.dispatchEvent(new CustomEvent("chat-reset"));
+      setMessages([]);
+      setInput("");
+      setSessionId(null);
+    }, 5 * 60 * 1000); // 5 minutes
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -124,6 +167,8 @@ const Chat: React.FC = () => {
           postLogTimeoutRef.current = null;
         }, 3000);
       }
+      // refresh inactivity timer on each successful send
+      resetInactivityTimer();
     } catch (error) {
       console.error("Error processing message:", error);
       // Add error message
@@ -162,9 +207,8 @@ const Chat: React.FC = () => {
       postLogTimeoutRef.current = null;
     }
     setPostLogModalOpen(false);
-    // Reset the chat/home input state so user can log another activity
-    setMessages([]);
-    setInput("");
+    // Navigate to home with reset flag; App will handle session start and UI reset
+    navigate({ to: "/", search: "?reset=true" });
     setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
@@ -174,6 +218,10 @@ const Chat: React.FC = () => {
       if (postLogTimeoutRef.current) {
         clearTimeout(postLogTimeoutRef.current);
         postLogTimeoutRef.current = null;
+      }
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+        inactivityTimeoutRef.current = null;
       }
     };
   }, []);
@@ -302,7 +350,11 @@ const Chat: React.FC = () => {
                 value={input}
                 name="message-input"
                 id="message-input"
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  // any user typing counts as activity — refresh inactivity timer
+                  resetInactivityTimer();
+                }}
                 onKeyPress={handleKeyPress}
                 placeholder="Message Activity AI..."
                 disabled={isLoading}
