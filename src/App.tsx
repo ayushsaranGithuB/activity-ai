@@ -27,45 +27,7 @@ export default function Layout() {
     setupNotifications(navigate, getLastActivityTimestamp);
   }, [navigate]);
 
-  // Central navigation listener — reset/start session when navigating to Home (/)
-  React.useEffect(() => {
-    const onLocationChange = () => {
-      try {
-        if (window.location.pathname === "/") {
-          const params = new URLSearchParams(window.location.search);
-          if (params.get("reset") === "true") {
-            try {
-              startSessionAndNotify();
-            } catch (e) {
-              console.error(
-                "Error starting session and notifying listeners",
-                e
-              );
-            }
-            // remove reset param so it doesn't re-trigger on reload
-            try {
-              const url = new URL(window.location.href);
-              url.searchParams.delete("reset");
-              history.replaceState(
-                history.state,
-                document.title,
-                url.pathname + url.search
-              );
-            } catch (e) {
-              console.error("Error removing reset param", e);
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Error handling location change", e);
-      }
-    };
-
-    window.addEventListener("locationchange", onLocationChange);
-    // run once on mount to handle direct loads
-    onLocationChange();
-    return () => window.removeEventListener("locationchange", onLocationChange);
-  }, []);
+  // Session reset handled explicitly by UI interactions via `startSessionAndNotify()`.
 
   const navigation = [
     { path: "/", name: "Home", icon: Home },
@@ -82,7 +44,14 @@ export default function Layout() {
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center space-x-2">
             <Link
-              to="/?reset=true"
+              to="/"
+              onClick={() => {
+                try {
+                  startSessionAndNotify();
+                } catch (e) {
+                  console.error("Error starting session from logo click", e);
+                }
+              }}
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
               <img src="/logo.svg" alt="Activity AI Logo" className="h-6 w-6" />
@@ -105,8 +74,13 @@ export default function Layout() {
                   return (
                     <Link
                       key={item.path}
-                      to={item.path === "/" ? "/?reset=true" : item.path}
+                      to={item.path}
                       onClick={() => {
+                        try {
+                          if (item.path === "/") startSessionAndNotify();
+                        } catch (e) {
+                          console.error("Error starting session from menu", e);
+                        }
                         setIsMenuOpen(false);
                       }}
                       className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors`}

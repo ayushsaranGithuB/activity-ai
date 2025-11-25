@@ -6,6 +6,7 @@ import {
   resetConversationContext,
   getSessionId,
 } from "../agent/agent";
+import { startSessionAndNotify } from "@/utils/sessionNotifier";
 import {
   Sheet,
   SheetContent,
@@ -207,8 +208,14 @@ const Chat: React.FC = () => {
       postLogTimeoutRef.current = null;
     }
     setPostLogModalOpen(false);
-    // Navigate to home with reset flag; App will handle session start and UI reset
-    navigate({ to: "/", search: "?reset=true" });
+    // Start a fresh session and navigate home. Calling the notifier here
+    // ensures the session resets immediately (no reliance on locationchange).
+    try {
+      startSessionAndNotify();
+    } catch (e) {
+      console.error("Error starting session from Chat handleLogAnother", e);
+    }
+    navigate({ to: "/" });
     setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
