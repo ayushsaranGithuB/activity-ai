@@ -2,12 +2,16 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Calendar, Activity } from "lucide-react";
+import { icons } from "@/lib/lucideIcons";
+import { suggestIconForName } from "@/lib/iconSuggestions";
+import type { CategoryItem } from "@/types/categoryItem";
 import { TREND_SUMMARY_PROMPT } from "@/prompts/trendSummaryPrompt";
 import { TODAY_SUMMARY_PROMPT } from "@/prompts/todayPrompt";
 import { callModel } from "@/agent/model";
 
 interface TrendData {
   category: string;
+  icon?: string;
   totalMinutes: number;
   percentage: number;
   subcategories: { name: string; totalMinutes: number; percentage: number }[];
@@ -39,7 +43,17 @@ const TrendCard = ({
           {trends.map((trend) => (
             <div key={trend.category} className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3 w-full">
+                <div className="flex items-center  w-full">
+                  <div className="w-8 h-8 flex items-center justify-center rounded bg-neutral-950">
+                    {(() => {
+                      const found = icons.find((i) => i.key === trend.icon);
+                      if (found) {
+                        const C = found.Component;
+                        return <C className="h-4 w-4" />;
+                      }
+                      return <Activity className="h-4 w-4" />;
+                    })()}
+                  </div>
                   <span className="font-medium">{trend.category}</span>
                 </div>
                 <div
@@ -106,7 +120,7 @@ const Trends: React.FC = () => {
         category?: string;
         sub_category?: string;
       }[],
-      categories: { id: number; name: string }[],
+      categories: CategoryItem[],
       period:
         | "today"
         | "yesterday"
@@ -193,8 +207,14 @@ const Trends: React.FC = () => {
                   : 0,
             }))
             .sort((a, b) => b.totalMinutes - a.totalMinutes);
+          // find icon for this category from categories list or suggest
+          const catObj = categories.find((c) => c.name === category);
+          const iconKey =
+            catObj?.icon ||
+            (category ? suggestIconForName(category) : undefined);
           return {
             category,
+            icon: iconKey,
             totalMinutes: data.total,
             percentage:
               totalAll > 0 ? Math.round((data.total / totalAll) * 100) : 0,
@@ -225,7 +245,7 @@ const Trends: React.FC = () => {
 
           categories =
             (await tools.dbQuery(
-              "SELECT id, name FROM categories ORDER BY id ASC"
+              "SELECT id, name, icon FROM categories ORDER BY id ASC"
             )) || [];
         } else {
           activities = (await import("@/db/dummyData/sample-activities"))
@@ -240,7 +260,7 @@ const Trends: React.FC = () => {
             { id: 6, name: "Household" },
             { id: 7, name: "Social" },
             { id: 8, name: "Health" },
-          ];
+          ].map((c) => ({ ...c, icon: suggestIconForName(c.name) }));
         }
 
         const today = computeTrends(activities, categories, "today");
