@@ -102,25 +102,6 @@ const Settings: React.FC = () => {
               </p>
             </div>
 
-            {/* Test Notification ------------------------------------------ */}
-            <div className="p-4 rounded-lg  bg-neutral-900">
-              <h4 className="font-medium mb-2">Test Notification</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Send a test notification to ensure notifications are working.
-              </p>
-              <button
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors border cursor-pointer"
-                onClick={() => {
-                  sendNotification(
-                    "Test Notification",
-                    "This is a test notification from Activity AI!"
-                  );
-                }}
-              >
-                Send Test Notification
-              </button>
-            </div>
-
             <div className="p-4 rounded-lg  bg-neutral-900">
               <h4 className="font-medium mb-2">Recategorize Activities</h4>
               <p className="text-sm text-muted-foreground mb-3">
@@ -133,19 +114,6 @@ const Settings: React.FC = () => {
                 onClick={handleRecategorize}
               >
                 Recategorize All Activities
-              </Button>
-            </div>
-
-            <div className="p-4 rounded-lg  bg-neutral-900">
-              <h4 className="font-medium mb-2">Clear Data</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Remove all logged activities and start fresh.
-              </p>
-              <Button
-                variant={"outline"}
-                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90 transition-colors"
-              >
-                Clear All Data
               </Button>
             </div>
           </CardContent>
@@ -201,34 +169,6 @@ const Settings: React.FC = () => {
               >
                 Send Test Notification
               </button>
-            </div>
-
-            <div className="p-4 rounded-lg  bg-neutral-900">
-              <h4 className="font-medium mb-2">Recategorize Activities</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Use AI to recategorize all your existing activities with better,
-                more specific categories.
-              </p>
-              <Button
-                variant={"outline"}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors cursor-pointer"
-                onClick={handleRecategorize}
-              >
-                Recategorize All Activities
-              </Button>
-            </div>
-
-            <div className="p-4 rounded-lg  bg-neutral-900">
-              <h4 className="font-medium mb-2">Clear Data</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Remove all logged activities and start fresh.
-              </p>
-              <Button
-                variant={"outline"}
-                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm hover:bg-destructive/90 transition-colors"
-              >
-                Clear All Data
-              </Button>
             </div>
           </CardContent>
         </Card>
