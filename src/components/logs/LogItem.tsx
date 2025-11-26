@@ -24,12 +24,15 @@ const LogItem: React.FC<LogItemProps> = ({
   <div
     className={clsx(
       `flex flex-col mb-2 bg-card hover:bg-muted/50 transition-colors cursor-pointer border-l border-neutral-600 px-4 ml-3 py-1 relative`,
-      active && "bg-white/10"
+      active && "bg-white/10 rounded-lg"
     )}
     onClick={onClick}
   >
     <CircleDot
-      className="h-6 w-6 absolute left-[-12px] top-0 py-1 bg-neutral-900"
+      className={clsx(
+        "h-6 w-6 absolute left-[-12px] top-0 py-1  rounded-full",
+        active ? "bg-neutral-700" : "bg-neutral-900"
+      )}
       color="#666"
     />
     <div className="flex  items-center justify-between gap-3 pb-3">
@@ -49,7 +52,7 @@ const LogItem: React.FC<LogItemProps> = ({
         <div>
           <p className="font-medium">{activity.description}</p>
           {activity.sub_category && (
-            <div className="text-xs text-muted-foreground opacity-60 mt-1 ">
+            <div className="text-sm text-muted-foreground  ">
               {activity.sub_category && (
                 <div className="">{activity.sub_category}</div>
               )}
@@ -66,9 +69,10 @@ const LogItem: React.FC<LogItemProps> = ({
       </div>
     </div>
     {active && (
-      <div className="flex gap-2 mt-4">
+      <div className="flex w-full justify-between mb-1">
         <Button
           size="sm"
+          className="p-0"
           onClick={(e) => {
             e.stopPropagation();
             onEdit();
@@ -80,6 +84,7 @@ const LogItem: React.FC<LogItemProps> = ({
         <Button
           variant="destructive"
           size="sm"
+          className="p-0 opacity-40"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();

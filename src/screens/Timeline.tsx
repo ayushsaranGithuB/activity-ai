@@ -45,7 +45,9 @@ const Timeline: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // ...existing code...
+  const toggleActivityId = (id: number) => {
+    setActiveActivityId((prevId) => (prevId === id ? null : id));
+  };
 
   const paginatedActivities = activities.slice(
     (currentPage - 1) * itemsPerPage,
@@ -82,14 +84,14 @@ const Timeline: React.FC = () => {
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-2 bg-neutral-900 rounded-xl ">
+              <CardContent className="p-1 bg-neutral-900 rounded-xl ">
                 <div className="space-y-3 pt-2 pl-1">
                   {dateActivities.map((activity) => (
                     <LogItem
                       key={activity.id}
                       activity={activity}
                       active={activeActivityId === activity.id}
-                      onClick={() => setActiveActivityId(activity.id)}
+                      onClick={() => toggleActivityId(activity.id)}
                       onEdit={() => {
                         setEditActivity(activity);
                         setEditDescription(activity.description);
