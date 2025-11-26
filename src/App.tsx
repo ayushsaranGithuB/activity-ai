@@ -2,10 +2,6 @@ import React from "react";
 import { Toaster } from "react-hot-toast";
 import {
   Menu,
-  Home,
-  TrendingUp,
-  Settings as SettingsIcon,
-  SquareChartGantt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +14,7 @@ import { setupNotifications } from "@/utils/notifications";
 import { Link, useNavigate, Outlet } from "@tanstack/react-router";
 import { getLastActivityTimestamp } from "@/lib/logsActions";
 import { startSessionAndNotify } from "@/utils/sessionNotifier";
+import navigation from "@/lib/constants/navigationLinks";
 
 export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -29,12 +26,7 @@ export default function Layout() {
 
   // Session reset handled explicitly by UI interactions via `startSessionAndNotify()`.
 
-  const navigation = [
-    { path: "/", name: "Home", icon: Home },
-    { path: "/timeline", name: "Timeline", icon: SquareChartGantt },
-    { path: "/trends", name: "Trends", icon: TrendingUp },
-    { path: "/settings", name: "Settings", icon: SettingsIcon },
-  ];
+ 
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased flex flex-col w-full px-3 max-h-screen">

@@ -18,6 +18,7 @@ interface TrendData {
 }
 
 import { formatMinutes } from "@/lib/utils";
+import BottomNavBar from "@/components/ui/BottomNavBar";
 
 const TrendCard = ({
   title,
@@ -393,6 +394,7 @@ const Trends: React.FC = () => {
   }
 
   return (
+    <>
     <div className="container py-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Activity Trends</h1>
@@ -469,6 +471,8 @@ const Trends: React.FC = () => {
         )}
       </div>
     </div>
+    <BottomNavBar activePath="/trends" />
+    </>
   );
 };
 
