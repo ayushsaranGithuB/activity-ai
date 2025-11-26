@@ -30,9 +30,9 @@ const EditModal: React.FC<EditModalProps> = ({
       <div className="bg-black p-6 rounded shadow-lg min-w-[320px]">
         <h3 className="text-lg font-bold mb-4">Edit Activity</h3>
         <label className="block mb-2">Description:</label>
-        <input
-          type="text"
+        <textarea
           className="w-full border px-2 py-1 mb-4"
+          rows={2}
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
         />
