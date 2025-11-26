@@ -114,10 +114,22 @@ export interface StorageStats {
 // Trend Analysis Types
 // ============================================================================
 
-export interface TrendData {
+export interface TrendDataPeriod {
     weekly: Record<string, CategoryTrend>;
     monthly: Record<string, CategoryTrend>;
     yearly: Record<string, CategoryTrend>;
+}
+
+export interface TrendDataCategory {
+    category: string;
+    icon?: string;
+    totalMinutes: number;
+    percentage: number;
+    subcategories: TrendDataSubCategory[];
+}
+
+export interface TrendDataSubCategory {
+    name: string; totalMinutes: number; percentage: number;
 }
 
 export interface CategoryTrend {
@@ -163,7 +175,7 @@ export interface AppState {
     activities: Activity[];
     categories: Map<string, Category>;
     selectedPeriod: "week" | "month" | "year";
-    trends: TrendData;
+    trends: TrendDataPeriod;
     loading: boolean;
     error: string | null;
 }

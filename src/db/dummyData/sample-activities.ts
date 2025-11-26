@@ -1,6 +1,8 @@
 // Sample activities for testing purposes
 
-export const sample_activities = [
+import { ActivityLogItem } from "@/types";
+
+export const sample_activities: ActivityLogItem[] = [
   { id: 1, description: "Went for a morning run", category_id: 1, timestamp: new Date().toISOString(), category: "Exercise", sub_category: "Running", length_mins: 30 },
   { id: 2, description: "Ate oatmeal for breakfast", category_id: 2, timestamp: new Date().toISOString(), category: "Meals", sub_category: "Breakfast", length_mins: 15 },
   { id: 3, description: "Attended project meeting", category_id: 3, timestamp: new Date().toISOString(), category: "Work", sub_category: "Meeting", length_mins: 60 },
@@ -18,3 +20,4 @@ export const sample_activities = [
   { id: 15, description: "Did laundry", category_id: 6, timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), category: "Household", sub_category: "Laundry", length_mins: 60 },
   { id: 16, description: "Meditated", category_id: 8, timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), category: "Health", sub_category: "Meditation", length_mins: 20 },
 ];
+
