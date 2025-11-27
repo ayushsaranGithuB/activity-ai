@@ -8,14 +8,6 @@ import {
   startSession,
 } from "../agent/agent";
 import { startSessionAndNotify } from "@/utils/sessionNotifier";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-} from "@/components/ui/sheet";
 import { useNavigate } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -269,6 +261,41 @@ const Chat: React.FC = () => {
   //   fetchAIQuestion();
   // }, []);
 
+  function postActivityOptionsBox() {
+    if (!postLogModalOpen) return null;
+    return (
+      <div className="postLogOptions pt-3">
+        <div className={`rounded-lg px-4 py-2 mx-4 break-words bg-muted`}>
+          <p
+            className={
+              "whitespace-pre-wrap text-sm text-muted-foreground text-center"
+            }
+          >
+            What would you like to do next?
+          </p>
+          <div className="mt-1 flex gap-6 flex-col py-4 w-full items-center ">
+            <Button
+              onClick={handleViewTimeline}
+              size="sm"
+              className="flex-1 w-full border text-xl p-3 rounded-full flex space-x-3 cursor-pointer"
+            >
+              <SquareChartGantt className="!w-[24px] !h-[24px]" />
+              View timeline
+            </Button>
+            <Button
+              onClick={handleLogAnother}
+              size="sm"
+              className="flex-1 w-full border text-xl p-3 rounded-full flex space-x-3 cursor-pointer"
+            >
+              <CirclePlus className="!w-[24px] !h-[24px]" />
+              Log another Activity
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-col h-full bg-background flex-1 ">
@@ -337,6 +364,8 @@ const Chat: React.FC = () => {
               </div>
             ))}
 
+            {postActivityOptionsBox()}
+
             {isLoading && (
               <div className="flex items-start space-x-3">
                 <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
@@ -400,37 +429,6 @@ const Chat: React.FC = () => {
           </div>
         </div>
       </div>
-      <Sheet open={postLogModalOpen} onOpenChange={setPostLogModalOpen}>
-        <SheetContent
-          side="bottom"
-          className="max-w-md mx-auto rounded-t-lg border-t-0"
-        >
-          <SheetHeader>
-            <SheetTitle>Activity logged</SheetTitle>
-            <SheetDescription>What would you like to do next?</SheetDescription>
-          </SheetHeader>
-
-          <div className="mt-4 flex gap-6 flex-col py-4">
-            <Button
-              onClick={handleViewTimeline}
-              size="sm"
-              className="flex-1 border text-xl p-3 rounded-full flex space-x-3 cursor-pointer"
-            >
-              <SquareChartGantt className="!w-[24px] !h-[24px]" />
-              View timeline
-            </Button>
-            <Button
-              onClick={handleLogAnother}
-              size="sm"
-              className="flex-1 border text-xl p-3 rounded-full flex space-x-3 cursor-pointer"
-            >
-              <CirclePlus className="!w-[24px] !h-[24px]" />
-              Log another Activity
-            </Button>
-          </div>
-          <SheetFooter />
-        </SheetContent>
-      </Sheet>
     </>
   );
 };

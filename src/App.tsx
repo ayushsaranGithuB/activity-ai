@@ -1,8 +1,6 @@
 import React from "react";
 import { Toaster } from "react-hot-toast";
-import {
-  Menu,
-} from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -25,8 +23,6 @@ export default function Layout() {
   }, [navigate]);
 
   // Session reset handled explicitly by UI interactions via `startSessionAndNotify()`.
-
- 
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased flex flex-col w-full px-3 max-h-screen">
@@ -106,7 +102,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-scroll flex flex-col h-full">
+      <main className="flex-1 overflow-y-scroll flex flex-col h-full thin-scrollbar">
         <Outlet />
       </main>
     </div>

@@ -3,7 +3,7 @@ import { clsx } from "clsx";
 import navigation from "@/lib/constants/navigationLinks";
 const BottomNavBar = ({ activePath }: { activePath: string }) => {
   return (
-    <div className="sticky bottom-[10px] bg-neutral-800 rounded-full p-3 border-t border-neutral-600/50 shadow-[0_0_12px_7px_#000]">
+    <div className="sticky bottom-[10px] bg-neutral-800 rounded-full p-3 border-t border-neutral-600/50 shadow-[0_0_12px_12px_#00000085]">
       <ul className="flex justify-around ">
         {/* <li>
           <Link to="/timeline" className="flex items-center px-4">
