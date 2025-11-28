@@ -86,6 +86,8 @@ export async function setupNotifications(navigate: NavigateFn, getLastActivityTi
         if (shouldSchedule) {
             let next = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
             next = nextAllowedTime(next);
+            // Clear any previous app notifications so only one is visible at a time
+            await clearAppNotifications();
             await LocalNotifications.schedule({
                 notifications: [{
                     id: 201,
@@ -121,6 +123,8 @@ export async function sendNotification(
     // Schedule immediately 
     const immediate = new Date(Date.now() + 1000);
 
+    // Make sure previous app notifications are cleared so only this one shows
+    await clearAppNotifications();
 
     await LocalNotifications.schedule({
         notifications: [{
@@ -131,4 +135,34 @@ export async function sendNotification(
         }]
     });
     console.log("Notification scheduled successfully");
+}
+
+// Clear any existing pending or delivered notifications from this app
+async function clearAppNotifications() {
+    try {
+        // Cancel pending notifications
+        const pending = await LocalNotifications.getPending();
+        if (pending && Array.isArray((pending as any).notifications) && (pending as any).notifications.length) {
+            await LocalNotifications.cancel({
+                notifications: (pending as any).notifications.map((n: any) => ({ id: n.id }))
+            });
+        }
+
+        // Try to cancel delivered notifications as well (may not be supported on all platforms)
+        if (typeof (LocalNotifications as any).getDeliveredNotifications === 'function') {
+            try {
+                const delivered = await (LocalNotifications as any).getDeliveredNotifications();
+                if (delivered && Array.isArray(delivered.notifications) && delivered.notifications.length) {
+                    await LocalNotifications.cancel({
+                        notifications: delivered.notifications.map((n: any) => ({ id: n.id }))
+                    });
+                }
+            } catch (e) {
+                // Non-fatal: some platforms/web fallback may not support delivered notifications removal
+                console.warn('Unable to clear delivered notifications', e);
+            }
+        }
+    } catch (e) {
+        console.warn('clearAppNotifications failed', e);
+    }
 }
