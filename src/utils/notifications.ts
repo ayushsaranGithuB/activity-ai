@@ -1,4 +1,4 @@
-import { LocalNotifications } from "@capacitor/local-notifications";
+import { LocalNotifications, PendingResult } from "@capacitor/local-notifications";
 import { NavigateFn } from '@tanstack/react-router';
 
 // Quiet hours constants and helpers (module scope so reusable)
@@ -138,28 +138,29 @@ export async function sendNotification(
 }
 
 // Clear any existing pending or delivered notifications from this app
-async function clearAppNotifications() {
+async function clearAppNotifications(): Promise<void> {
     try {
         // Cancel pending notifications
-        const pending = await LocalNotifications.getPending();
-        if (pending && Array.isArray((pending as any).notifications) && (pending as any).notifications.length) {
+        const pending = (await LocalNotifications.getPending()) as PendingResult;
+        if (pending && Array.isArray(pending.notifications) && pending.notifications.length) {
             await LocalNotifications.cancel({
-                notifications: (pending as any).notifications.map((n: any) => ({ id: n.id }))
+                notifications: pending.notifications.map((n) => ({ id: n.id }))
             });
         }
 
         // Try to cancel delivered notifications as well (may not be supported on all platforms)
-        if (typeof (LocalNotifications as any).getDeliveredNotifications === 'function') {
+        const ln = LocalNotifications as unknown as { getDeliveredNotifications?: () => Promise<{ notifications: { id: number }[] }> };
+        if (typeof ln.getDeliveredNotifications === 'function') {
             try {
-                const delivered = await (LocalNotifications as any).getDeliveredNotifications();
+                const delivered = await ln.getDeliveredNotifications();
                 if (delivered && Array.isArray(delivered.notifications) && delivered.notifications.length) {
                     await LocalNotifications.cancel({
-                        notifications: delivered.notifications.map((n: any) => ({ id: n.id }))
+                        notifications: delivered.notifications.map((n) => ({ id: n.id }))
                     });
                 }
-            } catch (e) {
+            } catch (err: unknown) {
                 // Non-fatal: some platforms/web fallback may not support delivered notifications removal
-                console.warn('Unable to clear delivered notifications', e);
+                console.warn('Unable to clear delivered notifications', err);
             }
         }
     } catch (e) {
