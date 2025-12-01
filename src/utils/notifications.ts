@@ -167,3 +167,8 @@ async function clearAppNotifications(): Promise<void> {
         console.warn('clearAppNotifications failed', e);
     }
 }
+
+// Public wrapper so other parts of the app can clear notifications
+export async function clearAllNotifications(): Promise<void> {
+    await clearAppNotifications();
+}

@@ -9,6 +9,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { setupNotifications } from "@/utils/notifications";
+import { clearAllNotifications } from "@/utils/notifications";
+import { Capacitor } from "@capacitor/core";
+import type { PluginListenerHandle } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import { Link, useNavigate, Outlet } from "@tanstack/react-router";
 import { getLastActivityTimestamp } from "@/lib/logsActions";
 import { startSessionAndNotify } from "@/utils/sessionNotifier";
@@ -17,9 +21,51 @@ import navigation from "@/lib/constants/navigationLinks";
 export default function Layout() {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const navigate = useNavigate();
+  const appStateHandleRef = React.useRef<PluginListenerHandle | null>(null);
+  const resumeHandleRef = React.useRef<PluginListenerHandle | null>(null);
 
   React.useEffect(() => {
     setupNotifications(navigate, getLastActivityTimestamp);
+
+    // Clear notifications if the app is opened from home screen (or resumed)
+    clearAllNotifications().catch((e) =>
+      console.warn("clearAllNotifications failed", e)
+    );
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        (async () => {
+          try {
+            appStateHandleRef.current = await CapacitorApp.addListener(
+              "appStateChange",
+              (state: { isActive: boolean }) => {
+                if (state.isActive) {
+                  clearAllNotifications().catch(() => {});
+                }
+              }
+            );
+            resumeHandleRef.current = await CapacitorApp.addListener(
+              "resume",
+              () => {
+                clearAllNotifications().catch(() => {});
+              }
+            );
+          } catch (e) {
+            console.warn("Error registering Capacitor app listeners", e);
+          }
+        })();
+      }
+    } catch (err) {
+      console.warn("Capacitor App listeners not available", err);
+    }
+    return () => {
+      try {
+        appStateHandleRef.current?.remove?.();
+        resumeHandleRef.current?.remove?.();
+      } catch {
+        /* ignore */
+      }
+    };
   }, [navigate]);
 
   // Session reset handled explicitly by UI interactions via `startSessionAndNotify()`.

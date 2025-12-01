@@ -6,6 +6,7 @@ import {
   Bell,
   Bug,
   ChartBarStacked,
+  LoaderCircle,
 } from "lucide-react";
 import { sendNotification } from "@/utils/notifications";
 import { toast } from "react-hot-toast";
@@ -17,33 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import ConfirmRecategorizeModal from "@/components/ui/ConfirmRecategorizeModal";
 import BottomNavBar from "@/components/ui/BottomNavBar";
-
-const exportDatabase = async () => {
-  try {
-    const activities = await storage.getAllActivities();
-    const categories = await storage.getAllCategories();
-
-    const data = {
-      activities,
-      categories,
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "activity-ai-database.json";
-    link.click();
-
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Failed to export database:", error);
-    toast.error("Failed to export database. Please try again.");
-  }
-};
 
 const doRecategorize = async () => {
   try {
@@ -69,6 +43,38 @@ const doRecategorize = async () => {
 
 const Settings: React.FC = () => {
   const [recategorizeModalOpen, setRecategorizeModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportDatabase = async () => {
+    setIsExporting(true);
+    try {
+      const activities = await storage.getAllActivities();
+      const categories = await storage.getAllCategories();
+
+      const data = {
+        activities,
+        categories,
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "activity-ai-database.json";
+      link.click();
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to export database:", error);
+      toast.error("Failed to export database. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <>
       <div className="container py-6 space-y-6">
@@ -200,6 +206,11 @@ const Settings: React.FC = () => {
                   onClick={exportDatabase}
                 >
                   Export Activities
+                  <LoaderCircle
+                    className={`ml-2 h-4 w-4 animate-spin ${
+                      isExporting ? "inline-block" : "hidden"
+                    }`}
+                  />
                 </Button>
               </div>
 

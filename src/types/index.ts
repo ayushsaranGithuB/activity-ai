@@ -126,6 +126,8 @@ export interface TrendDataCategory {
     totalMinutes: number;
     percentage: number;
     subcategories: TrendDataSubCategory[];
+    // Optional per-day breakdown for week views. Array of objects for each day (label, minutes)
+    daily?: { day: string; minutes: number }[];
 }
 
 export interface TrendDataSubCategory {

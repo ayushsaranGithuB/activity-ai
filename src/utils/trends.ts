@@ -210,9 +210,19 @@ export function computeTrends(
         return afterStart && beforeEnd;
     });
 
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
     const categoryData: {
-        [category: string]: { total: number; subs: { [sub: string]: number } };
+        [category: string]: { total: number; subs: { [sub: string]: number }; daily: number[] };
     } = {};
+    // Prepare 7-day buckets starting at startDate (last 7 days window)
+    const dayBuckets: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + i);
+        d.setHours(0, 0, 0, 0);
+        dayBuckets.push(d);
+    }
     filteredActivities.forEach((activity) => {
         const categoryName = activity.category_id
             ? categories.find((c) => c.id === activity.category_id)?.name ||
@@ -221,12 +231,25 @@ export function computeTrends(
         const subName = activity.sub_category || "General";
 
         if (!categoryData[categoryName]) {
-            categoryData[categoryName] = { total: 0, subs: {} };
+            categoryData[categoryName] = { total: 0, subs: {}, daily: Array(7).fill(0) };
         }
-        categoryData[categoryName].total += activity.length_mins || 0;
+        const mins = activity.length_mins || 0;
+        categoryData[categoryName].total += mins;
         categoryData[categoryName].subs[subName] =
-            (categoryData[categoryName].subs[subName] || 0) +
-            (activity.length_mins || 0);
+            (categoryData[categoryName].subs[subName] || 0) + mins;
+
+        // Compute day index relative to startDate and add to daily bucket if in range
+        try {
+            const activityDate = new Date(activity.timestamp);
+            const diff = Math.floor((activityDate.setHours(0, 0, 0, 0) - dayBuckets[0].getTime()) / MS_PER_DAY);
+            const idx = Math.max(0, Math.min(6, diff));
+            if (!Number.isNaN(idx)) {
+                categoryData[categoryName].daily[idx] += mins;
+            }
+        } catch (e) {
+            // ignore parsing errors
+            console.warn("Failed to parse activity date for daily trend:", e);
+        }
     });
 
     const totalAll = Object.values(categoryData).reduce(
@@ -246,12 +269,20 @@ export function computeTrends(
             // find icon for this category from categories list or suggest
             const catObj = categories.find((c) => c.name === category);
             const iconKey = catObj?.icon || (category ? suggestIconForName(category) : undefined);
+            const daily = data.daily
+                ? data.daily.map((minutes, i) => ({
+                    day: dayBuckets[i].toLocaleDateString(undefined, { weekday: "short" }),
+                    minutes,
+                }))
+                : undefined;
+
             return {
                 category,
                 icon: iconKey,
                 totalMinutes: data.total,
                 percentage: totalAll > 0 ? Math.round((data.total / totalAll) * 100) : 0,
                 subcategories,
+                daily,
             };
         })
         .sort((a, b) => b.totalMinutes - a.totalMinutes);
