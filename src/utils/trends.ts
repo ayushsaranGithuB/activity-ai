@@ -6,6 +6,24 @@ import { TREND_SUMMARY_PROMPT } from "@/prompts/trendSummaryPrompt";
 import { TODAY_SUMMARY_PROMPT } from "@/prompts/todayPrompt";
 import { callModel } from "@/agent/model";
 
+// Parse timestamps returned from SQLite/DB. SQLite CURRENT_TIMESTAMP returns
+// strings like "YYYY-MM-DD HH:MM:SS" (UTC) — these lack a timezone marker
+// so `new Date(...)` may be interpreted as local. Append a 'Z' when the
+// string matches the common UTC format so the Date is constructed from UTC.
+function parseTimestampToDate(ts: string) {
+    if (!ts) return new Date(NaN);
+    const sqliteUtcPattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
+    try {
+        if (sqliteUtcPattern.test(ts)) {
+            return new Date(ts.replace(" ", "T") + "Z");
+        }
+        return new Date(ts);
+    } catch (e) {
+        console.warn("Failed to parse timestamp:", ts, e);
+        return new Date(NaN);
+    }
+}
+
 export interface LoadTrendsResult {
     today: TrendDataCategory[];
     week: TrendDataCategory[];
@@ -73,7 +91,7 @@ export async function loadTrends(): Promise<LoadTrendsResult> {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayActivities = activities.filter((activity) => {
-        const activityDate = new Date(activity.timestamp);
+        const activityDate = parseTimestampToDate(activity.timestamp);
         return activityDate >= startOfToday;
     });
 
@@ -204,7 +222,7 @@ export function computeTrends(
     }
 
     const filteredActivities = activities.filter((activity) => {
-        const activityDate = new Date(activity.timestamp);
+        const activityDate = parseTimestampToDate(activity.timestamp);
         const afterStart = activityDate >= startDate;
         const beforeEnd = endDate ? activityDate < endDate : true;
         return afterStart && beforeEnd;
@@ -240,7 +258,7 @@ export function computeTrends(
 
         // Compute day index relative to startDate and add to daily bucket if in range
         try {
-            const activityDate = new Date(activity.timestamp);
+            const activityDate = parseTimestampToDate(activity.timestamp);
             const diff = Math.floor((activityDate.setHours(0, 0, 0, 0) - dayBuckets[0].getTime()) / MS_PER_DAY);
             const idx = Math.max(0, Math.min(6, diff));
             if (!Number.isNaN(idx)) {
@@ -252,18 +270,14 @@ export function computeTrends(
         }
     });
 
-    const totalAll = Object.values(categoryData).reduce(
-        (sum, cat) => sum + cat.total,
-        0
-    );
+    const totalAll = Object.values(categoryData).reduce((sum, cat) => sum + cat.total, 0);
     const trends: TrendDataCategory[] = Object.entries(categoryData)
         .map(([category, data]) => {
             const subcategories = Object.entries(data.subs)
                 .map(([name, totalMinutes]) => ({
                     name,
                     totalMinutes,
-                    percentage:
-                        data.total > 0 ? Math.round((totalMinutes / data.total) * 100) : 0,
+                    percentage: data.total > 0 ? Math.round((totalMinutes / data.total) * 100) : 0,
                 }))
                 .sort((a, b) => b.totalMinutes - a.totalMinutes);
             // find icon for this category from categories list or suggest

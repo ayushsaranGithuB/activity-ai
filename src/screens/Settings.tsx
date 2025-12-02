@@ -7,6 +7,7 @@ import {
   Bug,
   ChartBarStacked,
   LoaderCircle,
+  Copy,
 } from "lucide-react";
 import { sendNotification } from "@/utils/notifications";
 import { toast } from "react-hot-toast";
@@ -44,6 +45,8 @@ const doRecategorize = async () => {
 const Settings: React.FC = () => {
   const [recategorizeModalOpen, setRecategorizeModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportData, setExportData] = useState<string | null>(null);
 
   const exportDatabase = async () => {
     setIsExporting(true);
@@ -56,17 +59,11 @@ const Settings: React.FC = () => {
         categories,
       };
 
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "activity-ai-database.json";
-      link.click();
-
-      URL.revokeObjectURL(url);
+      // Instead of triggering a file download (which can fail on Android
+      // due to file permissions), show the data in a modal so the user
+      // can view, scroll, and copy the JSON.
+      setExportData(JSON.stringify(data, null, 2));
+      setExportModalOpen(true);
     } catch (error) {
       console.error("Failed to export database:", error);
       toast.error("Failed to export database. Please try again.");
@@ -276,6 +273,63 @@ const Settings: React.FC = () => {
         </div>
       </div>
       <BottomNavBar activePath="/settings" />
+      {exportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setExportModalOpen(false)}
+          />
+
+          <div className="relative w-[95%] max-w-3xl mx-auto bg-neutral-800 border rounded-md p-4 z-10">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-medium">Exported Database</h2>
+                <p className="text-sm text-muted-foreground">
+                  JSON view of your activities and categories
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  className="inline-flex items-center px-3 py-1 rounded bg-primary text-primary-foreground text-sm"
+                  onClick={async () => {
+                    try {
+                      if (!exportData) return;
+                      await navigator.clipboard.writeText(exportData);
+                      toast.success("JSON copied to clipboard");
+                    } catch (err) {
+                      console.error("Copy failed", err);
+                      toast.error("Failed to copy JSON");
+                    }
+                  }}
+                  title="Copy JSON"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy JSON
+                </button>
+
+                <button
+                  className="px-3 py-1 rounded bg-muted text-sm"
+                  onClick={() => setExportModalOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="max-h-[60vh] overflow-auto bg-neutral-900 rounded p-3 text-xs font-mono whitespace-pre-wrap">
+                {exportData ? (
+                  <pre className="text-xs">{exportData}</pre>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No data to show
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
