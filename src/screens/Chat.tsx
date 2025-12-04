@@ -170,7 +170,7 @@ const Chat: React.FC = () => {
         postLogTimeoutRef.current = window.setTimeout(() => {
           setPostLogModalOpen(true);
           postLogTimeoutRef.current = null;
-        }, 3000);
+        }, 1000);
         // Reset the session ID and conversation context
         setSessionId(null);
         resetConversationContext();
