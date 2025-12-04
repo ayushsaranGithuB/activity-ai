@@ -19,6 +19,7 @@ import {
   deleteActivity,
 } from "@/lib/logsActions";
 import BottomNavBar from "@/components/ui/BottomNavBar";
+import DayBars from "@/components/ui/DayBars";
 
 const Timeline: React.FC = () => {
   const [activeActivityId, setActiveActivityId] = useState<number | null>(null);
@@ -86,6 +87,7 @@ const Timeline: React.FC = () => {
               </CardHeader>
               <CardContent className="p-1 bg-neutral-900 rounded-xl ">
                 <div className="space-y-3 pt-2 pl-1">
+                  <DayBars activities={dateActivities} />
                   {dateActivities.map((activity) => (
                     <LogItem
                       key={activity.id}
