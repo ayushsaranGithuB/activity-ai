@@ -9,6 +9,7 @@ import {
   SquareChartGantt,
 } from "lucide-react";
 import { ActivityLogItem } from "@/types";
+import { toLocalInput, fromLocalInput } from "@/utils/datetime";
 import LogItem from "@/components/logs/LogItem";
 import EditModal from "@/components/logs/EditModal";
 import DeleteConfirmModal from "@/components/logs/DeleteConfirmModal";
@@ -99,15 +100,7 @@ const Timeline: React.FC = () => {
                         setEditDescription(activity.description);
                         setEditLengthMins(activity.length_mins ?? 30);
                         // Convert timestamp to local datetime-local format
-                        const d = new Date(activity.timestamp);
-                        const pad = (n: number) =>
-                          n.toString().padStart(2, "0");
-                        const yyyy = d.getFullYear();
-                        const mm = pad(d.getMonth() + 1);
-                        const dd = pad(d.getDate());
-                        const hh = pad(d.getHours());
-                        const min = pad(d.getMinutes());
-                        setEditTimestamp(`${yyyy}-${mm}-${dd}T${hh}:${min}`);
+                        setEditTimestamp(toLocalInput(activity.timestamp));
                         setEditModalOpen(true);
                       }}
                       onDelete={() => {
@@ -121,14 +114,15 @@ const Timeline: React.FC = () => {
                     description={editDescription}
                     timestamp={editTimestamp}
                     lengthMins={editLengthMins}
+                    selectedCategoryId={editActivity?.category_id ?? undefined}
                     onDescriptionChange={setEditDescription}
                     onTimestampChange={(val) => {
                       // Convert local datetime-local to ISO string
-                      const local = new Date(val);
+                      const iso = fromLocalInput(val);
                       setEditTimestamp(val);
                       setEditActivity((prev) =>
                         prev
-                          ? { ...prev, timestamp: local.toISOString() }
+                          ? { ...prev, timestamp: iso ?? prev.timestamp }
                           : prev
                       );
                     }}
@@ -138,18 +132,25 @@ const Timeline: React.FC = () => {
                         prev ? { ...prev, length_mins: mins } : prev
                       );
                     }}
+                    onCategoryChange={(catId) => {
+                      setEditActivity((prev) =>
+                        prev
+                          ? { ...prev, category_id: catId ?? undefined }
+                          : prev
+                      );
+                    }}
                     onCancel={() => {
                       setEditModalOpen(false);
                       setEditActivity(null);
                     }}
                     onSave={async () => {
                       if (editActivity) {
-                        await updateActivity(
-                          editActivity.id,
-                          editDescription,
-                          editActivity.timestamp,
-                          editLengthMins
-                        );
+                        await updateActivity(editActivity.id, {
+                          description: editDescription,
+                          timestamp: editActivity.timestamp,
+                          length_mins: editLengthMins,
+                          category_id: editActivity.category_id ?? undefined,
+                        });
                         setEditModalOpen(false);
                         setEditActivity(null);
                         const acts = await fetchActivities();

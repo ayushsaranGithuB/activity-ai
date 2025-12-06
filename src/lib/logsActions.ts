@@ -38,18 +38,42 @@ export async function fetchActivities(): Promise<ActivityLogItem[]> {
     }
 }
 
-export async function updateActivity(id: number, description: string, timestamp: string, length_mins?: number) {
-    if (length_mins != null) {
-        await dbQuery(
-            `UPDATE activities SET description = ?, timestamp = ?, length_mins = ? WHERE id = ?`,
-            [description, timestamp, length_mins, id]
-        );
-    } else {
-        await dbQuery(
-            `UPDATE activities SET description = ?, timestamp = ? WHERE id = ?`,
-            [description, timestamp, id]
-        );
+interface UpdateActivityOptions {
+    description?: string;
+    timestamp?: string;
+    length_mins?: number | null | undefined;
+    category_id?: number | undefined | null;
+}
+
+export async function updateActivity(id: number, updates: UpdateActivityOptions) {
+    const sets: string[] = [];
+    const params: any[] = [];
+
+    if (updates.description !== undefined) {
+        sets.push('description = ?');
+        params.push(updates.description);
     }
+
+    if (updates.timestamp !== undefined) {
+        sets.push('timestamp = ?');
+        params.push(updates.timestamp);
+    }
+
+    if (updates.length_mins !== undefined && updates.length_mins !== null) {
+        sets.push('length_mins = ?');
+        params.push(updates.length_mins);
+    }
+
+    if (updates.category_id !== undefined) {
+        sets.push('category_id = ?');
+        params.push(updates.category_id);
+    }
+
+    if (sets.length === 0) return;
+
+    const sql = `UPDATE activities SET ${sets.join(', ')} WHERE id = ?`;
+    params.push(id);
+    await dbQuery(sql, params);
 }
 
 export async function deleteActivity(id: number) {
