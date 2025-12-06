@@ -47,7 +47,7 @@ interface UpdateActivityOptions {
 
 export async function updateActivity(id: number, updates: UpdateActivityOptions) {
     const sets: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (updates.description !== undefined) {
         sets.push('description = ?');

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { storage } from "@/agent/tools";
+import { CategoryItem } from "@/types/categoryItem";
 
 interface CategoryOption {
   id: number;
@@ -40,9 +41,18 @@ const EditModal: React.FC<EditModalProps> = ({
     let mounted = true;
     async function loadCategories() {
       try {
-        const rows: any = await storage.getAllCategories();
+        const rows = (await storage.getAllCategories()) as
+          | CategoryItem[]
+          | undefined;
         if (!mounted) return;
-        const opts = (rows || []).map((r: any) => ({ id: r.id, name: r.name }));
+        if (!rows || !Array.isArray(rows)) {
+          setCategories([]);
+          return;
+        }
+        const opts = rows.map((r: CategoryItem) => ({
+          id: r.id,
+          name: r.name,
+        }));
         setCategories(opts);
       } catch (e) {
         console.warn("Failed to load categories for EditModal", e);
