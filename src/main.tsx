@@ -4,6 +4,7 @@ import "./css/styles.css";
 import { Capacitor } from "@capacitor/core";
 import { RouterProvider } from "@tanstack/react-router";
 import { router } from "./router";
+import { initDB } from "./db/initialize";
 
 // Initialize Gemini AI with API key from environment variables
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -15,6 +16,15 @@ if (!apiKey) {
 
 // Add keyboard listeners for better mobile experience (only on native platforms)
 if (Capacitor.isNativePlatform()) {
+  // Ensure SQLite DB is initialized early on native platforms
+  (async () => {
+    try {
+      await initDB();
+      console.debug("SQLite DB initialized");
+    } catch (e) {
+      console.error("Failed to initialize SQLite DB on startup:", e);
+    }
+  })();
   import("@capacitor/keyboard")
     .then(({ Keyboard }) => {
       Keyboard.addListener("keyboardWillShow", () => {

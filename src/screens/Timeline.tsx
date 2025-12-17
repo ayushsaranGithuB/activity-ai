@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,8 @@ const Timeline: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  const navigate = useNavigate();
+
   const toggleActivityId = (id: number) => {
     setActiveActivityId((prevId) => (prevId === id ? null : id));
   };
@@ -63,12 +66,13 @@ const Timeline: React.FC = () => {
     <>
       <div className="container py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <SquareChartGantt />
-              Log
-            </h1>
-          </div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <SquareChartGantt />
+            Log
+          </h1>
+          <Button variant={"outline"} onClick={() => navigate({ to: "/" })}>
+            Add Activity
+          </Button>
         </div>
 
         <div className="space-y-6">

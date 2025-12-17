@@ -8,11 +8,18 @@ export async function getLastActivityTimestamp(): Promise<Date | null> {
 }
 import { Capacitor } from "@capacitor/core";
 import { dbQuery } from "@/agent/tools";
+import { initDB } from "@/db/initialize";
 import { sample_activities } from "@/db/dummyData/sample-activities";
 import { ActivityLogItem } from "@/types";
 
 export async function fetchActivities(): Promise<ActivityLogItem[]> {
     if (Capacitor.isNativePlatform()) {
+        // Ensure DB initialized in case UI called this before app-level init completed
+        try {
+            await initDB();
+        } catch (e) {
+            console.warn('initDB() failed or already initialized:', e);
+        }
         try {
             const rows = await dbQuery(
                 `SELECT a.id, a.description, a.category_id, a.length_mins, a.sub_category, a.timestamp, c.name as category 
